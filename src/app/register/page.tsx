@@ -19,11 +19,13 @@ export default function RegisterPage() {
     const formData = new FormData(e.currentTarget);
     try {
       const res = await registerUser(formData);
-      if (res?.success) {
+      if (res?.error) {
+        setError(res.error);
+      } else if (res?.success) {
         router.push("/login?registered=true");
       }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Registration failed");
+    } catch {
+      setError("An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
