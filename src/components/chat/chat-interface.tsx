@@ -1,8 +1,8 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { useEffect, useRef } from "react";
-import { Send, Square, User } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Send, Square, User, Mic, MicOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -27,7 +27,9 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
   });
 
   const isLoading = status === "submitted" || status === "streaming";
-
+  const [isListening, setIsListening] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -35,6 +37,46 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert("Voice input is not supported in this browser. Please try Chrome or Safari.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      if (transcript) {
+        // Auto-correct: capitalize first letter and format cleanly
+        const text = transcript.trim();
+        const corrected = text.charAt(0).toUpperCase() + text.slice(1);
+        const newInput = input ? `${input} ${corrected}` : corrected;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        handleInputChange({ target: { value: newInput } } as any);
+      }
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  };
 
   return (
     <div className="flex h-full w-full flex-col bg-background overflow-hidden relative">
@@ -108,10 +150,24 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
             <input
               value={input}
               onChange={handleInputChange}
-              placeholder="Message RashidBot..."
-              className="min-h-12 sm:min-h-14 w-full resize-none border-0 bg-transparent py-3 pl-4 pr-12 text-sm sm:text-base focus:outline-none placeholder:text-muted-foreground/70"
+              placeholder={isListening ? "Listening... Speak now" : "Message RashidBot..."}
+              className="min-h-12 sm:min-h-14 w-full resize-none border-0 bg-transparent py-3 pl-4 pr-24 text-sm sm:text-base focus:outline-none placeholder:text-muted-foreground/70"
             />
-            <div className="absolute right-2 top-1/2 -translate-y-1/2">
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={toggleListening}
+                title={isListening ? "Stop listening" : "Speak to type"}
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-xl transition-all",
+                  isListening
+                    ? "bg-destructive text-white animate-pulse shadow-lg ring-2 ring-destructive/50"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/80"
+                )}
+              >
+                {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </button>
+
               {isLoading ? (
                 <button
                   onClick={stop}
