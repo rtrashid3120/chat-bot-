@@ -22,7 +22,14 @@ export async function registerUser(formData: FormData) {
       return { error: "Password must be at least 6 characters" };
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const existing = await prisma.user.findFirst({
+      where: {
+        email: {
+          equals: email,
+          mode: "insensitive",
+        },
+      },
+    });
     if (existing) {
       return { error: "An account with this email already exists. Please Sign In." };
     }

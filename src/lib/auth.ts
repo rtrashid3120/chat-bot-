@@ -20,16 +20,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
-        const normalizedEmail = (credentials.email as string).trim().toLowerCase();
-        const rawPassword = (credentials.password as string).trim();
+        const normalizedEmail = String(credentials.email).trim().toLowerCase();
+        const rawPassword = String(credentials.password).trim();
 
-        const user = await prisma.user.findUnique({
-          where: { email: normalizedEmail },
+        // Search case-insensitively so accounts created under any casing match 100%
+        const user = await prisma.user.findFirst({
+          where: {
+            email: {
+              equals: normalizedEmail,
+              mode: "insensitive",
+            },
+          },
         });
+
         if (!user || !user.password) return null;
+
         const isValid = await bcrypt.compare(rawPassword, user.password);
         if (!isValid) return null;
-        return user;
+
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+        };
       },
     }),
   ],
