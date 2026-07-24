@@ -2,7 +2,8 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getConversations, createConversation } from "@/app/actions/conversations";
 import { Sidebar } from "@/components/chat/sidebar";
-import { PlusCircle, Bot } from "lucide-react";
+import { AILogo } from "@/components/ui/ai-logo";
+import { PlusCircle } from "lucide-react";
 
 export default async function ChatPage() {
   let session = null;
@@ -19,9 +20,7 @@ export default async function ChatPage() {
     <div className="flex flex-col md:flex-row h-screen bg-background overflow-hidden">
       <Sidebar conversations={conversations} currentId={undefined} />
       <main className="flex-1 flex flex-col items-center justify-center gap-6 text-center p-6 sm:p-8">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-500/10 text-brand-500 ring-1 ring-brand-500/20 animate-bounce">
-          <Bot className="h-8 w-8" />
-        </div>
+        <AILogo size="xl" />
         <div>
           <h1 className="text-3xl font-bold text-foreground">RashidBot</h1>
           <p className="text-muted-foreground mt-2 text-sm sm:text-base">Start a new conversation with RashidBot AI</p>

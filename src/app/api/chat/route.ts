@@ -25,6 +25,17 @@ export async function POST(req: Request) {
 
     // Save user message to DB
     if (id) {
+      const conv = await prisma.conversation.findUnique({
+        where: { id, userId },
+        select: { title: true },
+      });
+
+      const isDefaultTitle = !conv || conv.title === "New Chat" || conv.title.trim() === "";
+      const snippetTitle =
+        lastMessage.content.length > 35
+          ? `${lastMessage.content.slice(0, 35)}...`
+          : lastMessage.content;
+
       await prisma.message.create({
         data: {
           conversationId: id,
@@ -37,6 +48,7 @@ export async function POST(req: Request) {
       await prisma.conversation.update({
         where: { id, userId },
         data: {
+          ...(isDefaultTitle ? { title: snippetTitle } : {}),
           lastMessageAt: new Date(),
           messageCount: { increment: 1 },
         },

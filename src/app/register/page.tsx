@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Bot, Mail, Lock, User, Loader2 } from "lucide-react";
+import { Mail, Lock, User, Loader2 } from "lucide-react";
 import { registerUser } from "@/app/actions/auth";
+import { AILogo } from "@/components/ui/ai-logo";
 
 export default function RegisterPage() {
   const [error, setError] = useState("");
@@ -17,8 +18,10 @@ export default function RegisterPage() {
     setError("");
     const formData = new FormData(e.currentTarget);
     try {
-      await registerUser(formData);
-      router.push("/login?registered=true");
+      const res = await registerUser(formData);
+      if (res?.success) {
+        router.push("/login?registered=true");
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed");
     } finally {
@@ -30,9 +33,7 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-500/10 text-brand-500 mb-4">
-            <Bot className="h-8 w-8" />
-          </div>
+          <AILogo size="lg" className="mb-4" />
           <h1 className="text-3xl font-bold text-foreground">Create account</h1>
           <p className="text-muted-foreground mt-1">Join RashidBot today</p>
         </div>

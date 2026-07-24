@@ -4,7 +4,8 @@ import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Bot, Mail, Lock, Loader2, UserPlus } from "lucide-react";
+import { Mail, Lock, Loader2, UserPlus } from "lucide-react";
+import { AILogo } from "@/components/ui/ai-logo";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -34,9 +35,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-500/10 text-brand-500 ring-1 ring-brand-500/20 mb-4 animate-pulse">
-            <Bot className="h-8 w-8" />
-          </div>
+          <AILogo size="lg" className="mb-4" />
           <h1 className="text-3xl font-bold text-foreground">Welcome to RashidBot</h1>
           <p className="text-muted-foreground mt-1 text-sm text-center">Sign in to your account or create a new one</p>
         </div>

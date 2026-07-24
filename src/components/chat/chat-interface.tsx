@@ -2,10 +2,11 @@
 
 import { useChat } from "@ai-sdk/react";
 import { useEffect, useRef } from "react";
-import { Send, Square, Bot, User } from "lucide-react";
+import { Send, Square, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { AILogo } from "@/components/ui/ai-logo";
 
 type DBMessage = {
   id: string;
@@ -36,15 +37,19 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
   }, [messages]);
 
   return (
-    <div className="flex h-full w-full flex-col bg-background overflow-hidden">
-      <div className="flex-1 overflow-y-auto px-3 py-4 sm:px-6 lg:px-8" ref={scrollRef}>
+    <div className="flex h-full w-full flex-col bg-background overflow-hidden relative">
+      {/* Background ambient glowing shapes */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-10 right-10 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
+
+      <div className="flex-1 overflow-y-auto px-3 py-4 sm:px-6 lg:px-8 z-10" ref={scrollRef}>
         <div className="mx-auto max-w-3xl space-y-4 pb-12">
           {messages.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center space-y-4 pt-20 sm:pt-32 text-center px-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-500/10 text-brand-500 ring-1 ring-brand-500/20 animate-bounce">
-                <Bot className="h-7 w-7" />
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">How can I help you today?</h2>
+            <div className="flex h-full flex-col items-center justify-center space-y-5 pt-20 sm:pt-32 text-center px-4">
+              <AILogo size="xl" />
+              <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-foreground via-purple-300 to-cyan-300 bg-clip-text text-transparent">
+                How can I help you today?
+              </h2>
               <p className="text-muted-foreground max-w-sm text-sm sm:text-base">
                 I&apos;m RashidBot, your personal AI assistant. Ask me anything!
               </p>
@@ -54,38 +59,35 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
               <div
                 key={m.id}
                 className={cn(
-                  "flex w-full animate-fade-in gap-3 sm:gap-4 rounded-2xl p-3.5 sm:p-4 transition-all shadow-sm",
+                  "flex w-full animate-fade-in gap-3 sm:gap-4 rounded-2xl p-4 transition-all shadow-md backdrop-blur-md",
                   m.role === "user"
-                    ? "bg-accent/60 ml-auto border border-border/40"
-                    : "bg-card border border-border/60"
+                    ? "bg-accent/70 ml-auto border border-border/50"
+                    : "bg-card/90 border border-border/70"
                 )}
               >
-                <div
-                  className={cn(
-                    "flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-xl border shadow-sm",
-                    m.role === "user"
-                      ? "bg-background border-border text-foreground"
-                      : "bg-gradient-to-br from-brand-500 to-brand-600 text-white border-brand-600"
+                <div className="shrink-0 pt-0.5">
+                  {m.role === "user" ? (
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary border border-border text-foreground shadow-sm">
+                      <User className="h-5 w-5" />
+                    </div>
+                  ) : (
+                    <AILogo size="sm" />
                   )}
-                >
-                  {m.role === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
                 </div>
-                <div className="flex-1 space-y-2 overflow-hidden px-1 prose prose-sm dark:prose-invert max-w-none text-sm sm:text-base">
+                <div className="flex-1 space-y-2 overflow-hidden px-1 prose prose-sm dark:prose-invert max-w-none text-sm sm:text-base leading-relaxed">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
                 </div>
               </div>
             ))
           )}
           {isLoading && messages[messages.length - 1]?.role === "user" && (
-            <div className="flex w-full animate-fade-in gap-3 sm:gap-4 rounded-2xl p-3.5 sm:p-4 bg-card border border-border/60 shadow-sm">
-              <div className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 text-white border border-brand-600 shadow-sm">
-                <Bot className="h-4 w-4" />
-              </div>
+            <div className="flex w-full animate-fade-in gap-3 sm:gap-4 rounded-2xl p-4 bg-card/90 border border-border/70 shadow-md backdrop-blur-md">
+              <AILogo size="sm" />
               <div className="flex-1 flex items-center px-1">
-                <div className="flex gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-brand-500 animate-bounce" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-brand-500 animate-bounce [animation-delay:0.2s]" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-brand-500 animate-bounce [animation-delay:0.4s]" />
+                <div className="flex gap-1.5 items-center">
+                  <span className="h-2.5 w-2.5 rounded-full bg-cyan-400 animate-ping" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-indigo-500 animate-ping [animation-delay:0.2s]" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-purple-500 animate-ping [animation-delay:0.4s]" />
                 </div>
               </div>
             </div>

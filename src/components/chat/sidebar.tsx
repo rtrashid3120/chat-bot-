@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useState } from "react";
 import { createConversation, deleteConversation } from "@/app/actions/conversations";
-import { PlusCircle, MessageSquare, Trash2, Bot, LogOut, MoreVertical, Menu, X } from "lucide-react";
+import { PlusCircle, MessageSquare, Trash2, LogOut, MoreVertical, Menu, X } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { AILogo } from "@/components/ui/ai-logo";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,11 +41,9 @@ export function Sidebar({
   const sidebarContent = (
     <div className="flex flex-col h-full bg-card border-r border-border w-64 shadow-2xl md:shadow-none">
       <div className="p-4 border-b border-border flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500/10 text-brand-500 ring-1 ring-brand-500/20">
-            <Bot className="h-5 w-5 animate-pulse" />
-          </div>
-          <span className="font-bold text-lg tracking-tight text-foreground bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text">
+        <div className="flex items-center gap-2.5">
+          <AILogo size="sm" />
+          <span className="font-extrabold text-lg tracking-tight text-foreground bg-gradient-to-r from-purple-400 via-indigo-300 to-cyan-300 bg-clip-text text-transparent">
             RashidBot
           </span>
         </div>
@@ -133,10 +132,8 @@ export function Sidebar({
         </button>
 
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-500/10 text-brand-500">
-            <Bot className="h-4 w-4" />
-          </div>
-          <span className="font-bold text-base text-foreground">RashidBot</span>
+          <AILogo size="sm" />
+          <span className="font-extrabold text-base tracking-tight bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">RashidBot</span>
         </div>
 
         <form action={createConversation}>
