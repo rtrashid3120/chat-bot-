@@ -1,18 +1,20 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, Loader2, UserPlus } from "lucide-react";
+import { Mail, Lock, Loader2, UserPlus, CheckCircle2 } from "lucide-react";
 import { AILogo } from "@/components/ui/ai-logo";
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isRegistered = searchParams.get("registered") === "true";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -34,19 +36,19 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md">
-        <div className="flex flex-col items-center mb-8">
-          <AILogo size="lg" className="mb-4" />
-          <h1 className="text-3xl font-bold text-foreground">Welcome to RashidBot</h1>
-          <p className="text-muted-foreground mt-1 text-sm text-center">Sign in to your account or create a new one</p>
+    <div className="bg-card border border-border/80 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
+      {isRegistered && !error && (
+        <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm text-center font-semibold flex items-center justify-center gap-2">
+          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+          Account created! Sign in with your new email & password.
         </div>
-        <div className="bg-card border border-border/80 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
-          {error && (
-            <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm text-center font-medium">
-              {error}
-            </div>
-          )}
+      )}
+
+      {error && (
+        <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm text-center font-medium">
+          {error}
+        </div>
+      )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -95,12 +97,27 @@ export default function LoginPage() {
 
           <Link
             href="/register"
-            className="w-full border border-brand-500/40 hover:border-brand-500/80 bg-brand-500/5 hover:bg-brand-500/10 text-brand-500 font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 text-sm"
+            className="w-full border border-brand-500/40 hover:border-brand-500/80 bg-brand-500/5 hover:bg-brand-500/10 text-brand-500 font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 text-sm text-center"
           >
             <UserPlus className="h-4 w-4" />
             Create New Account
           </Link>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md">
+        <div className="flex flex-col items-center mb-8">
+          <AILogo size="lg" className="mb-4" />
+          <h1 className="text-3xl font-bold text-foreground">Welcome to RashidBot</h1>
+          <p className="text-muted-foreground mt-1 text-sm text-center">Sign in to your account or create a new one</p>
         </div>
+        <Suspense fallback={<div className="h-64 rounded-2xl bg-card border border-border/80 animate-pulse" />}>
+          <LoginForm />
+        </Suspense>
       </div>
     </div>
   );
