@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
+  secret: process.env.AUTH_SECRET || "fallback_secret_for_build_only",
   debug: true,
   pages: {
     signIn: "/login",
