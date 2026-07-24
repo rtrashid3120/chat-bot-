@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createConversation, deleteConversation } from "@/app/actions/conversations";
-import { PlusCircle, MessageSquare, Trash2, Bot, LogOut, MoreVertical } from "lucide-react";
+import { PlusCircle, MessageSquare, Trash2, Bot, LogOut, MoreVertical, Menu, X } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import {
@@ -29,8 +28,8 @@ export function Sidebar({
   conversations: Conversation[];
   currentId?: string;
 }) {
-  const router = useRouter();
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
 
   async function handleDelete(id: string) {
     setDeleting(id);
@@ -38,19 +37,30 @@ export function Sidebar({
     setDeleting(null);
   }
 
-  return (
-    <aside className="w-64 flex flex-col h-screen bg-card border-r border-border shrink-0">
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500/10 text-brand-500">
-            <Bot className="h-5 w-5" />
+  const sidebarContent = (
+    <div className="flex flex-col h-full bg-card border-r border-border w-64 shadow-2xl md:shadow-none">
+      <div className="p-4 border-b border-border flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500/10 text-brand-500 ring-1 ring-brand-500/20">
+            <Bot className="h-5 w-5 animate-pulse" />
           </div>
-          <span className="font-bold text-foreground">GeminiChat</span>
+          <span className="font-bold text-lg tracking-tight text-foreground bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text">
+            RashidBot
+          </span>
         </div>
+        <button
+          onClick={() => setIsOpen(false)}
+          className="md:hidden text-muted-foreground hover:text-foreground p-1 rounded-lg transition-colors"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+
+      <div className="p-3">
         <form action={createConversation}>
           <button
             type="submit"
-            className="w-full flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium px-3 py-2 rounded-lg transition-all active:scale-95"
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-all shadow-md hover:shadow-brand-500/25 active:scale-95"
           >
             <PlusCircle className="h-4 w-4" />
             New Chat
@@ -58,35 +68,36 @@ export function Sidebar({
         </form>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2 space-y-1">
+      <div className="flex-1 overflow-y-auto px-2 py-1 space-y-1 scrollbar-thin">
         {conversations.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-8 px-4">
-            No conversations yet. Start a new chat!
+          <p className="text-xs text-muted-foreground text-center py-10 px-4">
+            No conversations yet. Tap &quot;New Chat&quot; to start!
           </p>
         ) : (
           conversations.map((conv) => (
             <div
               key={conv.id}
               className={cn(
-                "group flex items-center gap-2 rounded-lg px-3 py-2 text-sm cursor-pointer transition-colors hover:bg-accent",
-                currentId === conv.id && "bg-accent"
+                "group flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm cursor-pointer transition-all hover:bg-accent/80",
+                currentId === conv.id && "bg-accent font-medium shadow-sm"
               )}
             >
-              <MessageSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <MessageSquare className="h-4 w-4 shrink-0 text-brand-500" />
               <Link
                 href={`/chat/${conv.id}`}
+                onClick={() => setIsOpen(false)}
                 className="flex-1 truncate text-foreground"
               >
                 {conv.title}
               </Link>
               <DropdownMenu>
-                <DropdownMenuTrigger className="flex h-6 w-6 items-center justify-center rounded-md opacity-0 transition-opacity group-hover:opacity-100 hover:bg-accent hover:text-accent-foreground">
-                  <MoreVertical className="h-3 w-3" />
+                <DropdownMenuTrigger className="flex h-7 w-7 items-center justify-center rounded-lg opacity-80 md:opacity-0 transition-opacity group-hover:opacity-100 hover:bg-background/80 hover:text-foreground">
+                  <MoreVertical className="h-3.5 w-3.5" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-40">
                   <DropdownMenuItem
                     onClick={() => handleDelete(conv.id)}
-                    className="text-destructive focus:text-destructive"
+                    className="text-destructive focus:text-destructive cursor-pointer"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
                     {deleting === conv.id ? "Deleting..." : "Delete"}
@@ -98,15 +109,63 @@ export function Sidebar({
         )}
       </div>
 
-      <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-border mt-auto">
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="w-full flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg px-3 py-2 transition-colors"
+          className="w-full flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/60 rounded-xl px-3 py-2.5 transition-colors"
         >
-          <LogOut className="h-4 w-4" />
+          <LogOut className="h-4 w-4 text-destructive" />
           Sign out
         </button>
       </div>
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Top Mobile Bar */}
+      <header className="md:hidden flex items-center justify-between px-4 py-3 bg-card border-b border-border w-full shrink-0">
+        <button
+          onClick={() => setIsOpen(true)}
+          className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-foreground hover:bg-accent/80 transition-colors"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-500/10 text-brand-500">
+            <Bot className="h-4 w-4" />
+          </div>
+          <span className="font-bold text-base text-foreground">RashidBot</span>
+        </div>
+
+        <form action={createConversation}>
+          <button
+            type="submit"
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500 text-white hover:bg-brand-600 transition-all active:scale-95"
+          >
+            <PlusCircle className="h-5 w-5" />
+          </button>
+        </form>
+      </header>
+
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex flex-col h-screen shrink-0">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile Drawer Overlay */}
+      {isOpen && (
+        <div className="fixed inset-0 z-50 md:hidden flex animate-fade-in">
+          <div
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm transition-opacity"
+            onClick={() => setIsOpen(false)}
+          />
+          <div className="relative z-10 w-64 h-full animate-in slide-in-from-left duration-200">
+            {sidebarContent}
+          </div>
+        </div>
+      )}
+    </>
   );
 }

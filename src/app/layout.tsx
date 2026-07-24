@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "GeminiChat — AI Assistant",
-  description: "Chat with Gemini AI. Fast, smart, and beautiful.",
+  title: "RashidBot — AI Assistant",
+  description: "Chat with RashidBot AI. Fast, smart, and beautiful.",
 };
 
 export default function RootLayout({

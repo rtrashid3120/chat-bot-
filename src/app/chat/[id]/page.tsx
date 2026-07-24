@@ -40,9 +40,9 @@ export default async function ChatConversationPage({
   }));
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex flex-col md:flex-row h-screen bg-background overflow-hidden">
       <Sidebar conversations={conversations} currentId={id} />
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 h-full overflow-hidden">
         <ChatInterface id={id} initialMessages={initialMessages} />
       </main>
     </div>
