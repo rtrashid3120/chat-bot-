@@ -18,9 +18,11 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
     const result = await signIn("credentials", {
-      email,
-      password,
+      email: cleanEmail,
+      password: cleanPassword,
       redirect: false,
     });
     setLoading(false);

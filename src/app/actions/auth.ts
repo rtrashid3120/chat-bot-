@@ -6,13 +6,17 @@ import { redirect } from "next/navigation";
 
 export async function registerUser(formData: FormData) {
   try {
-    const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
+    const rawName = formData.get("name") as string;
+    const rawEmail = formData.get("email") as string;
+    const rawPassword = formData.get("password") as string;
 
-    if (!name || !email || !password) {
+    if (!rawName || !rawEmail || !rawPassword) {
       return { error: "All fields are required" };
     }
+
+    const name = rawName.trim();
+    const email = rawEmail.trim().toLowerCase();
+    const password = rawPassword.trim();
 
     if (password.length < 6) {
       return { error: "Password must be at least 6 characters" };
@@ -20,7 +24,7 @@ export async function registerUser(formData: FormData) {
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
-      return { error: "Email is already registered" };
+      return { error: "An account with this email already exists. Please Sign In." };
     }
 
     const hashed = await bcrypt.hash(password, 12);
