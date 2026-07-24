@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+:root {
+  --background: hsl(224, 71.4%, 4.1%);
+  --foreground: hsl(210, 20%, 98%);
+  --card: hsl(224, 71.4%, 4.1%);
+  --card-foreground: hsl(210, 20%, 98%);
+  --popover: hsl(224, 71.4%, 4.1%);
+  --popover-foreground: hsl(210, 20%, 98%);
+  --primary: hsl(263.4, 70%, 50.4%);
+  --primary-foreground: hsl(210, 20%, 98%);
+  --secondary: hsl(215, 27.9%, 16.9%);
+  --secondary-foreground: hsl(210, 20%, 98%);
+  --muted: hsl(215, 27.9%, 16.9%);
+  --muted-foreground: hsl(217.9, 10.6%, 64.9%);
+  --accent: hsl(215, 27.9%, 16.9%);
+  --accent-foreground: hsl(210, 20%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(210, 20%, 98%);
+  --border: hsl(215, 27.9%, 16.9%);
+  --input: hsl(215, 27.9%, 16.9%);
+  --ring: hsl(263.4, 70%, 50.4%);
+  --radius: 0.5rem;
+  --brand-500: hsl(263, 70%, 60%);
+  --brand-600: hsl(263, 70%, 50%);
+}
+
+* {
+  box-sizing: border-box;
+  border-color: var(--border);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter, system-ui, sans-serif);
+}
+
+/* Utility classes used throughout the app */
+.bg-background { background-color: var(--background); }
+.bg-card { background-color: var(--card); }
+.bg-secondary { background-color: var(--secondary); }
+.bg-accent { background-color: var(--accent); }
+.bg-accent\/50 { background-color: color-mix(in srgb, var(--accent) 50%, transparent); }
+.bg-muted { background-color: var(--muted); }
+
+.text-foreground { color: var(--foreground); }
+.text-card-foreground { color: var(--card-foreground); }
+.text-muted-foreground { color: var(--muted-foreground); }
+.text-accent-foreground { color: var(--accent-foreground); }
+.text-primary-foreground { color: var(--primary-foreground); }
+.text-destructive { color: var(--destructive); }
+
+.border-border { border-color: var(--border); }
+.border-border\/50 { border-color: color-mix(in srgb, var(--border) 50%, transparent); }
+
+/* Brand colors */
+.bg-brand-500\/10 { background-color: color-mix(in srgb, var(--brand-500) 10%, transparent); }
+.bg-brand-500\/50 { background-color: color-mix(in srgb, var(--brand-500) 50%, transparent); }
+.bg-brand-500 { background-color: var(--brand-500); }
+.bg-brand-600 { background-color: var(--brand-600); }
+.hover\:bg-brand-600:hover { background-color: var(--brand-600); }
+.text-brand-500 { color: var(--brand-500); }
+.border-brand-600 { border-color: var(--brand-600); }
+.border-brand-500\/50 { border-color: color-mix(in srgb, var(--brand-500) 50%, transparent); }
+.focus-within\:border-brand-500\/50:focus-within { border-color: color-mix(in srgb, var(--brand-500) 50%, transparent); }
+.focus-within\:ring-1:focus-within { --tw-ring-shadow: 0 0 0 1px var(--tw-ring-color); box-shadow: var(--tw-ring-shadow); }
+.focus-within\:ring-brand-500\/50:focus-within { --tw-ring-color: color-mix(in srgb, var(--brand-500) 50%, transparent); }
+
+/* Destructive */
+.bg-destructive\/10 { background-color: color-mix(in srgb, var(--destructive) 10%, transparent); }
+.focus\:text-destructive:focus { color: var(--destructive); }
+
+/* Elevated shadow */
+.shadow-elevated {
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 4px 24px rgba(0,0,0,0.3);
+}
+.shadow-lg { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.4), 0 4px 6px -2px rgba(0,0,0,0.2); }
+.shadow-sm { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.3); }
+
+/* Animations */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); }
+  50% { transform: translateY(-4px); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-fade-in { animation: fade-in 0.2s ease-out; }
+.animate-bounce { animation: bounce 1s infinite; }
+.animate-spin { animation: spin 1s linear infinite; }
+.\[animation-delay\:0\.2s\] { animation-delay: 0.2s; }
+.\[animation-delay\:0\.4s\] { animation-delay: 0.4s; }
+
+/* Prose / markdown */
+.prose { max-width: 65ch; color: var(--foreground); }
+.prose p { margin-bottom: 1em; }
+.prose h1, .prose h2, .prose h3 { font-weight: 600; margin-bottom: 0.5em; }
+.prose ul, .prose ol { padding-left: 1.5em; margin-bottom: 1em; }
+.prose li { margin-bottom: 0.25em; }
+.prose code { background: var(--secondary); padding: 0.2em 0.4em; border-radius: 0.25em; font-size: 0.875em; }
+.prose pre { background: var(--secondary); padding: 1em; border-radius: 0.5em; overflow-x: auto; margin-bottom: 1em; }
+.prose pre code { background: none; padding: 0; }
+.prose blockquote { border-left: 3px solid var(--border); padding-left: 1em; color: var(--muted-foreground); }
+.prose-sm { font-size: 0.875rem; }
+.dark\:prose-invert { color: var(--foreground); }
+.max-w-none { max-width: none !important; }
