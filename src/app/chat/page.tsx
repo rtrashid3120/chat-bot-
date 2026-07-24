@@ -5,7 +5,12 @@ import { Sidebar } from "@/components/chat/sidebar";
 import { PlusCircle, Bot } from "lucide-react";
 
 export default async function ChatPage() {
-  const session = await auth();
+  let session = null;
+  try {
+    session = await auth();
+  } catch (e) {
+    console.error("Auth error in ChatPage:", e);
+  }
   if (!session?.user) redirect("/login");
 
   const conversations = await getConversations();
