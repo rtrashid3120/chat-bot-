@@ -1,5 +1,9 @@
 import type { NextAuthConfig } from "next-auth";
 
+if (process.env.VERCEL_URL && !process.env.AUTH_URL) {
+  process.env.AUTH_URL = `https://${process.env.VERCEL_URL}`;
+}
+
 export const authConfig = {
   trustHost: true,
   secret: process.env.AUTH_SECRET || "fallback_secret_for_build_only",
