@@ -491,46 +491,32 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
                 <button
                   type="button"
                   onMouseDown={() => {
-                    if ('webkitSpeechRecognition' in window) {
-                      recognitionRef.current?.start();
-                      setIsListening(true);
-                    }
+                    if (!isListening) toggleListening();
                   }}
                   onMouseUp={() => {
-                    if ('webkitSpeechRecognition' in window) {
-                      recognitionRef.current?.stop();
-                      setIsListening(false);
-                      // Give it a tiny delay for the final onresult to populate input before submitting
+                    if (isListening) {
+                      toggleListening(); // stops it
                       setTimeout(() => {
-                        const evt = new Event("submit") as any;
-                        chatSubmit(evt, { body: { id, model: selectedModel, persona: selectedPersona, imageBase64 } });
-                        setImageBase64(null);
-                      }, 400);
+                        document.getElementById("hidden-submit-btn")?.click();
+                      }, 500);
                     }
                   }}
                   onMouseLeave={() => {
                     if (isListening) {
-                      recognitionRef.current?.stop();
-                      setIsListening(false);
+                      toggleListening();
                     }
                   }}
                   onTouchStart={(e) => {
-                    e.preventDefault(); // Prevent text selection on mobile
-                    if ('webkitSpeechRecognition' in window) {
-                      recognitionRef.current?.start();
-                      setIsListening(true);
-                    }
+                    e.preventDefault(); 
+                    if (!isListening) toggleListening();
                   }}
                   onTouchEnd={(e) => {
                     e.preventDefault();
-                    if ('webkitSpeechRecognition' in window) {
-                      recognitionRef.current?.stop();
-                      setIsListening(false);
+                    if (isListening) {
+                      toggleListening();
                       setTimeout(() => {
-                        const evt = new Event("submit") as any;
-                        chatSubmit(evt, { body: { id, model: selectedModel, persona: selectedPersona, imageBase64 } });
-                        setImageBase64(null);
-                      }, 400);
+                        document.getElementById("hidden-submit-btn")?.click();
+                      }, 500);
                     }
                   }}
                   className={cn(
@@ -621,6 +607,7 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
               )}
             </div>
             )}
+            <button id="hidden-submit-btn" type="submit" className="hidden" />
           </form>
           <p className="mt-2 text-center text-[11px] sm:text-xs text-muted-foreground/80">
             RashidBot can make mistakes. Verify important information.
