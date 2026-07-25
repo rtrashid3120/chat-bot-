@@ -125,10 +125,14 @@ export async function POST(req: Request) {
         console.log(`Web search intent detected: "${searchIntent}"`);
         
         const { load } = await import("cheerio");
-        const htmlRes = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(searchIntent)}`, {
+        // Use DDG Lite (POST request) which is much more reliable and less heavily blocked
+        const htmlRes = await fetch("https://lite.duckduckgo.com/lite/", {
+          method: "POST",
           headers: { 
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" 
-          }
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/112.0" 
+          },
+          body: "q=" + encodeURIComponent(searchIntent)
         });
         
         if (htmlRes.ok) {
@@ -136,7 +140,7 @@ export async function POST(req: Request) {
           const $ = load(htmlText);
           const results: string[] = [];
           
-          $('.result__snippet').each((i, el) => {
+          $('.result-snippet').each((i, el) => {
             if (i < 4) {
               results.push("- " + $(el).text().trim());
             }
