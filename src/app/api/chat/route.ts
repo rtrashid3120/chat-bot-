@@ -1,6 +1,5 @@
 import { groq } from "@/lib/groq";
-import { openai } from "@/lib/openai";
-import { mistral } from "@/lib/mistral"; // OpenAI-compatible Mistral client
+import { mistral } from "@/lib/mistral";
 import { streamText } from "ai";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -8,11 +7,9 @@ import { prisma } from "@/lib/prisma";
 export const maxDuration = 60;
 
 // All supported models
-const MODELS: Record<string, { provider: "groq" | "openai" | "mistral"; modelId: string }> = {
+const MODELS: Record<string, { provider: "groq" | "mistral"; modelId: string }> = {
   "llama-3.3-70b-versatile": { provider: "groq",    modelId: "llama-3.3-70b-versatile" },
-  "mistral-small-latest":    { provider: "mistral", modelId: "mistral-small-latest" },
-  "gpt-4o":                  { provider: "openai",  modelId: "gpt-4o" },
-  "gpt-4o-mini":             { provider: "openai",  modelId: "gpt-4o-mini" },
+  "open-mistral-7b":         { provider: "mistral", modelId: "open-mistral-7b" },
 };
 
 const DEFAULT_MODEL = "llama-3.3-70b-versatile";
@@ -20,8 +17,7 @@ const DEFAULT_MODEL = "llama-3.3-70b-versatile";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getModel(modelKey: string): any {
   const cfg = MODELS[modelKey] ?? MODELS[DEFAULT_MODEL];
-  if (cfg.provider === "openai")  return openai(cfg.modelId);
-  if (cfg.provider === "mistral") return mistral(cfg.modelId); // routes via OpenAI-compat API
+  if (cfg.provider === "mistral") return mistral(cfg.modelId);
   return groq(cfg.modelId);
 }
 
@@ -40,6 +36,14 @@ export async function POST(req: Request) {
     }
 
     const modelKey = MODELS[selectedModel] ? selectedModel : DEFAULT_MODEL;
+
+    // Validate API keys before calling
+    if (MODELS[modelKey]?.provider === "mistral" && !process.env.MISTRAL_API_KEY) {
+      return new Response(
+        JSON.stringify({ error: "Mistral API key not configured on server." }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
     const lastMessage = messages[messages.length - 1];
     const userId = session.user.id as string;
 
