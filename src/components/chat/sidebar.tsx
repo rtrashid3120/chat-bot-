@@ -38,6 +38,12 @@ export function Sidebar({
     setDeleting(null);
   }
 
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredConversations = conversations.filter(conv => 
+    conv.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const sidebarContent = (
     <div className="flex flex-col h-full bg-card border-r border-border w-64 shadow-2xl md:shadow-none">
       <div className="p-4 border-b border-border flex items-center justify-between">
@@ -59,21 +65,31 @@ export function Sidebar({
         <form action={createConversation}>
           <button
             type="submit"
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-all shadow-md hover:shadow-brand-500/25 active:scale-95"
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-all shadow-md hover:shadow-brand-500/25 active:scale-95 mb-3"
           >
             <PlusCircle className="h-4 w-4" />
             New Chat
           </button>
         </form>
+        
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search chats..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-accent/50 border border-border rounded-lg pl-3 pr-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-brand-500 transition-all"
+          />
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-2 py-1 space-y-1 scrollbar-thin">
-        {conversations.length === 0 ? (
+        {filteredConversations.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-10 px-4">
-            No conversations yet. Tap &quot;New Chat&quot; to start!
+            {conversations.length === 0 ? "No conversations yet. Tap \"New Chat\" to start!" : "No chats match your search."}
           </p>
         ) : (
-          conversations.map((conv) => (
+          filteredConversations.map((conv) => (
             <div
               key={conv.id}
               className={cn(

@@ -2,11 +2,12 @@
 
 import { useChat } from "@ai-sdk/react";
 import { useEffect, useRef, useState } from "react";
-import { Send, Square, User, Mic, MicOff, ChevronDown } from "lucide-react";
+import { Send, Square, User, Mic, MicOff, ChevronDown, Download, Volume2, Settings2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { AILogo } from "@/components/ui/ai-logo";
+import { CodeBlock } from "@/components/chat/code-block";
 
 const MODELS = [
   { key: "llama-3.3-70b-versatile", label: "Llama 3.3 70B", badge: "Free", icon: "⚡" },
@@ -24,10 +25,19 @@ type ChatInterfaceProps = {
   initialMessages?: DBMessage[];
 };
 
+const PERSONAS = [
+  { key: "default", label: "Default Assistant", description: "Helpful and concise" },
+  { key: "coding", label: "Coding Expert", description: "Focuses on clean, robust code" },
+  { key: "creative", label: "Creative Writer", description: "Imaginative and expressive" },
+];
+
 export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) {
   const [selectedModel, setSelectedModel] = useState("llama-3.3-70b-versatile");
+  const [selectedPersona, setSelectedPersona] = useState("default");
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
+  const [personaDropdownOpen, setPersonaDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const personaRef = useRef<HTMLDivElement>(null);
 
   const { messages, input, handleInputChange, handleSubmit: chatSubmit, status, stop } = useChat({
     id,
@@ -47,16 +57,39 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
     }
   }, [messages]);
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setModelDropdownOpen(false);
       }
+      if (personaRef.current && !personaRef.current.contains(e.target as Node)) {
+        setPersonaDropdownOpen(false);
+      }
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  const exportChat = () => {
+    if (messages.length === 0) return;
+    const content = messages.map(m => `### ${m.role === 'user' ? 'You' : 'RashidBot'}\n${m.content}\n`).join('\n---\n\n');
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `RashidBot-Chat-${new Date().toISOString().slice(0, 10)}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const speak = (text: string) => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.speak(utterance);
+    }
+  };
 
   const toggleListening = () => {
     if (isListening) {
@@ -98,6 +131,7 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
   };
 
   const currentModel = MODELS.find((m) => m.key === selectedModel) ?? MODELS[0];
+  const currentPersona = PERSONAS.find((p) => p.key === selectedPersona) ?? PERSONAS[0];
 
   return (
     <div className="flex h-full w-full flex-col bg-background overflow-hidden relative">
@@ -105,52 +139,97 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 right-10 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
 
-      {/* Model Selector Bar */}
-      <div className="relative z-20 flex items-center justify-center pt-3 pb-1 px-4">
-        <div ref={dropdownRef} className="relative">
-          <button
-            type="button"
-            onClick={() => setModelDropdownOpen((v) => !v)}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-card border border-border/70 hover:border-brand-500/50 text-sm font-medium text-foreground transition-all shadow-sm hover:shadow-brand-500/10 hover:shadow-md group"
-          >
-            <span className="text-base leading-none">{currentModel.icon}</span>
-            <span className="text-foreground/90">{currentModel.label}</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-brand-500/15 text-brand-400 font-semibold">
-              {currentModel.badge}
-            </span>
-            <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", modelDropdownOpen && "rotate-180")} />
-          </button>
+      {/* Top Action Bar */}
+      <div className="relative z-20 flex items-center justify-between pt-3 pb-1 px-4 max-w-3xl mx-auto w-full">
+        <div className="flex items-center gap-2">
+          {/* Model Selector */}
+          <div ref={dropdownRef} className="relative">
+            <button
+              type="button"
+              onClick={() => { setModelDropdownOpen((v) => !v); setPersonaDropdownOpen(false); }}
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-card border border-border/70 hover:border-brand-500/50 text-sm font-medium text-foreground transition-all shadow-sm hover:shadow-brand-500/10 hover:shadow-md group"
+            >
+              <span className="text-base leading-none">{currentModel.icon}</span>
+              <span className="hidden sm:inline text-foreground/90">{currentModel.label}</span>
+              <span className="hidden sm:inline text-[10px] px-1.5 py-0.5 rounded-md bg-brand-500/15 text-brand-400 font-semibold">
+                {currentModel.badge}
+              </span>
+              <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", modelDropdownOpen && "rotate-180")} />
+            </button>
 
-          {modelDropdownOpen && (
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-64 rounded-2xl bg-card border border-border/80 shadow-2xl shadow-black/40 overflow-hidden z-50 animate-fade-in">
-              <div className="px-3 py-2 border-b border-border/60">
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Select AI Model</p>
+            {modelDropdownOpen && (
+              <div className="absolute top-full mt-2 left-0 w-56 rounded-2xl bg-card border border-border/80 shadow-2xl shadow-black/40 overflow-hidden z-50 animate-fade-in">
+                <div className="px-3 py-2 border-b border-border/60">
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Select Model</p>
+                </div>
+                {MODELS.map((m) => (
+                  <button
+                    key={m.key}
+                    type="button"
+                    onClick={() => { setSelectedModel(m.key); setModelDropdownOpen(false); }}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-left",
+                      selectedModel === m.key
+                        ? "bg-brand-500/15 text-brand-400"
+                        : "text-foreground hover:bg-accent/60"
+                    )}
+                  >
+                    <span className="text-base">{m.icon}</span>
+                    <span className="flex-1 font-medium">{m.label}</span>
+                  </button>
+                ))}
               </div>
-              {MODELS.map((m) => (
-                <button
-                  key={m.key}
-                  type="button"
-                  onClick={() => { setSelectedModel(m.key); setModelDropdownOpen(false); }}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-left",
-                    selectedModel === m.key
-                      ? "bg-brand-500/15 text-brand-400"
-                      : "text-foreground hover:bg-accent/60"
-                  )}
-                >
-                  <span className="text-base">{m.icon}</span>
-                  <span className="flex-1 font-medium">{m.label}</span>
-                  <span className={cn(
-                    "text-[10px] px-1.5 py-0.5 rounded-md font-semibold",
-                    m.badge === "OpenAI" ? "bg-emerald-500/15 text-emerald-400" : "bg-brand-500/15 text-brand-400"
-                  )}>
-                    {m.badge}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
+            )}
+          </div>
+
+          {/* Persona Selector */}
+          <div ref={personaRef} className="relative hidden sm:block">
+            <button
+              type="button"
+              onClick={() => { setPersonaDropdownOpen((v) => !v); setModelDropdownOpen(false); }}
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-card border border-border/70 hover:border-brand-500/50 text-sm font-medium text-foreground transition-all shadow-sm hover:shadow-brand-500/10 hover:shadow-md group"
+            >
+              <Settings2 className="h-4 w-4 text-brand-500" />
+              <span className="text-foreground/90">{currentPersona.label}</span>
+              <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", personaDropdownOpen && "rotate-180")} />
+            </button>
+
+            {personaDropdownOpen && (
+              <div className="absolute top-full mt-2 left-0 w-64 rounded-2xl bg-card border border-border/80 shadow-2xl shadow-black/40 overflow-hidden z-50 animate-fade-in">
+                <div className="px-3 py-2 border-b border-border/60">
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Bot Persona</p>
+                </div>
+                {PERSONAS.map((p) => (
+                  <button
+                    key={p.key}
+                    type="button"
+                    onClick={() => { setSelectedPersona(p.key); setPersonaDropdownOpen(false); }}
+                    className={cn(
+                      "w-full flex flex-col px-4 py-2 text-sm transition-colors text-left",
+                      selectedPersona === p.key
+                        ? "bg-brand-500/15 text-brand-400"
+                        : "text-foreground hover:bg-accent/60"
+                    )}
+                  >
+                    <span className="font-medium">{p.label}</span>
+                    <span className="text-xs opacity-70">{p.description}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Export Button */}
+        <button
+          onClick={exportChat}
+          disabled={messages.length === 0}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border/70 hover:bg-accent hover:text-foreground text-sm font-medium text-muted-foreground transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Export Chat to Markdown"
+        >
+          <Download className="h-4 w-4" />
+          <span className="hidden sm:inline">Export</span>
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 py-4 sm:px-6 lg:px-8 z-10" ref={scrollRef}>
@@ -186,8 +265,39 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
                   )}
                 </div>
                 <div className="flex-1 space-y-2 overflow-hidden px-1 prose prose-sm dark:prose-invert max-w-none text-sm sm:text-base leading-relaxed">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      code(props) {
+                        const { children, className, node, ...rest } = props;
+                        const match = /language-(\w+)/.exec(className || "");
+                        return match ? (
+                          <CodeBlock
+                            language={match[1]}
+                            value={String(children).replace(/\n$/, "")}
+                          />
+                        ) : (
+                          <code {...rest} className={cn(className, "bg-muted/50 rounded-md px-1.5 py-0.5")}>
+                            {children}
+                          </code>
+                        );
+                      }
+                    }}
+                  >
+                    {m.content}
+                  </ReactMarkdown>
                 </div>
+                {m.role === "assistant" && (
+                  <div className="pt-1">
+                    <button
+                      onClick={() => speak(m.content)}
+                      className="text-muted-foreground hover:text-brand-500 p-1.5 rounded-lg hover:bg-accent/50 transition-colors"
+                      title="Read aloud"
+                    >
+                      <Volume2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             ))
           )}
@@ -212,7 +322,7 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
             onSubmit={(e) => {
               e.preventDefault();
               if (!input.trim() && !isLoading) return;
-              chatSubmit(e, { body: { id, model: selectedModel } });
+              chatSubmit(e, { body: { id, model: selectedModel, persona: selectedPersona } });
             }}
             className="relative flex items-center shadow-lg rounded-2xl bg-card border border-border/80 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 transition-all"
           >
