@@ -9,9 +9,10 @@ import remarkGfm from "remark-gfm";
 import { AILogo } from "@/components/ui/ai-logo";
 
 const MODELS = [
-  { key: "llama-3.3-70b-versatile", label: "Llama 3.3 70B", badge: "Free",   icon: "⚡" },
-  { key: "gpt-4o",                   label: "GPT-4o",         badge: "OpenAI", icon: "🤖" },
-  { key: "gpt-4o-mini",              label: "GPT-4o Mini",    badge: "OpenAI", icon: "🤖" },
+  { key: "llama-3.3-70b-versatile", label: "Llama 3.3 70B",  badge: "Free",    icon: "⚡" },
+  { key: "mistral-small-latest",     label: "Mistral Small",   badge: "Free",    icon: "🌟" },
+  { key: "gpt-4o",                   label: "GPT-4o",          badge: "OpenAI",  icon: "🤖" },
+  { key: "gpt-4o-mini",              label: "GPT-4o Mini",     badge: "OpenAI",  icon: "🤖" },
 ];
 
 type DBMessage = {
