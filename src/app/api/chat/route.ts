@@ -114,12 +114,29 @@ export async function POST(req: Request) {
       
       if (searchIntent && searchIntent !== "NO_SEARCH" && !searchIntent.includes("NO_SEARCH")) {
         console.log(`Web search intent detected: "${searchIntent}"`);
-        const { search } = await import("duck-duck-scrape");
-        const searchRes = await search(searchIntent);
         
-        if (searchRes && searchRes.results && searchRes.results.length > 0) {
-          const topResults = searchRes.results.slice(0, 3).map(r => `- ${r.title}: ${r.description}`).join('\n');
-          searchContext = `\n\nLive Web Search Results for "${searchIntent}":\n${topResults}\nUse this live context to inform your answer.`;
+        const { load } = await import("cheerio");
+        const htmlRes = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(searchIntent)}`, {
+          headers: { 
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" 
+          }
+        });
+        
+        if (htmlRes.ok) {
+          const htmlText = await htmlRes.text();
+          const $ = load(htmlText);
+          const results: string[] = [];
+          
+          $('.result__snippet').each((i, el) => {
+            if (i < 4) {
+              results.push("- " + $(el).text().trim());
+            }
+          });
+          
+          if (results.length > 0) {
+            const topResults = results.join('\n');
+            searchContext = `\n\nLive Web Search Results for "${searchIntent}":\n${topResults}\nUse this live context to inform your answer.`;
+          }
         }
       }
     } catch (e) {

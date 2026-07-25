@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { useEffect, useRef, useState } from "react";
-import { Send, Square, User, Mic, MicOff, ChevronDown, Download, Volume2, Settings2 } from "lucide-react";
+import { Send, Square, User, Mic, MicOff, ChevronDown, Download, Volume2, Settings2, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -288,13 +288,25 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
                   </ReactMarkdown>
                 </div>
                 {m.role === "assistant" && (
-                  <div className="pt-1">
+                  <div className="pt-1 flex items-center gap-1">
                     <button
                       onClick={() => speak(m.content)}
                       className="text-muted-foreground hover:text-brand-500 p-1.5 rounded-lg hover:bg-accent/50 transition-colors"
                       title="Read aloud"
                     >
                       <Volume2 className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (navigator.clipboard) {
+                          navigator.clipboard.writeText(m.content);
+                          // We could add a toast here, but simple copy is fine
+                        }
+                      }}
+                      className="text-muted-foreground hover:text-brand-500 p-1.5 rounded-lg hover:bg-accent/50 transition-colors"
+                      title="Copy message"
+                    >
+                      <Copy className="h-4 w-4" />
                     </button>
                   </div>
                 )}
