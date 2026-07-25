@@ -64,6 +64,7 @@ model Conversation {
   title         String    @default("New Chat")
   isPinned      Boolean   @default(false)
   isArchived    Boolean   @default(false)
+  shareId       String?   @unique
   model         String    @default("gemini-2.0-flash")
   systemPrompt  String?   @db.Text
   temperature   Float     @default(0.7)

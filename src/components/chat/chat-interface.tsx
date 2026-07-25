@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { useEffect, useRef, useState } from "react";
-import { Send, Square, User, Mic, MicOff, ChevronDown, Download, Volume2, Settings2, Copy, Paperclip, X, VolumeX } from "lucide-react";
+import { Send, Square, User, Mic, MicOff, ChevronDown, Download, Volume2, Settings2, Copy, Paperclip, X, VolumeX, Share2, Wand2, Radio } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -37,6 +37,8 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
   const [personaDropdownOpen, setPersonaDropdownOpen] = useState(false);
   const [autoSpeak, setAutoSpeak] = useState(false);
+  const [walkieMode, setWalkieMode] = useState(false);
+  const [isImproving, setIsImproving] = useState(false);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -44,7 +46,7 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
   const personaRef = useRef<HTMLDivElement>(null);
   const lastSpokenId = useRef<string | null>(null);
 
-  const { messages, input, handleInputChange, handleSubmit: chatSubmit, status, stop } = useChat({
+  const { messages, input, setInput, handleInputChange, handleSubmit: chatSubmit, status, stop } = useChat({
     id,
     initialMessages: initialMessages as import("@ai-sdk/react").Message[],
     body: { id },
@@ -167,6 +169,45 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const handleShare = async () => {
+    try {
+      const res = await fetch(`/api/chat/${id}/share`, { method: "POST" });
+      if (!res.ok) throw new Error("Failed to share");
+      const data = await res.json();
+      const shareUrl = `${window.location.origin}/share/${data.shareId}`;
+      await navigator.clipboard.writeText(shareUrl);
+      alert("✅ Public share link copied to clipboard!\n\n" + shareUrl);
+    } catch (e) {
+      alert("Failed to generate share link.");
+    }
+  };
+
+  const improvePrompt = async () => {
+    if (!input.trim() || isImproving) return;
+    setIsImproving(true);
+    try {
+      const res = await fetch("/api/improve-prompt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: input })
+      });
+      if (!res.ok) throw new Error("Failed to improve prompt");
+      const data = await res.json();
+      if (data.improvedPrompt) {
+        // Use setInput if available, fallback to event simulation
+        if (typeof setInput === 'function') {
+          setInput(data.improvedPrompt);
+        } else {
+          handleInputChange({ target: { value: data.improvedPrompt } } as any);
+        }
+      }
+    } catch (e) {
+      alert("Failed to improve prompt.");
+    } finally {
+      setIsImproving(false);
+    }
+  };
+
   const currentModel = MODELS.find((m) => m.key === selectedModel) ?? MODELS[0];
   const currentPersona = PERSONAS.find((p) => p.key === selectedPersona) ?? PERSONAS[0];
 
@@ -258,6 +299,21 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2">
+          {/* Walkie-Talkie Toggle */}
+          <button
+            onClick={() => setWalkieMode(!walkieMode)}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-sm font-medium transition-all shadow-sm",
+              walkieMode 
+                ? "bg-rose-500/15 border-rose-500/30 text-rose-500" 
+                : "bg-card border-border/70 text-muted-foreground hover:bg-accent hover:text-foreground"
+            )}
+            title="Toggle Walkie-Talkie Mode"
+          >
+            <Radio className="h-4 w-4" />
+            <span className="hidden sm:inline">Walkie</span>
+          </button>
+
           {/* Auto-Speak Toggle */}
           <button
             onClick={() => {
@@ -276,15 +332,26 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
             <span className="hidden sm:inline">Auto-Speak</span>
           </button>
 
+          {/* Share Button */}
+          <button
+            onClick={handleShare}
+            disabled={messages.length === 0}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border/70 hover:bg-accent hover:text-foreground text-sm font-medium text-muted-foreground transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Share Public Link"
+          >
+            <Share2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Share</span>
+          </button>
+
           {/* Export Button */}
           <button
             onClick={exportChat}
             disabled={messages.length === 0}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border/70 hover:bg-accent hover:text-foreground text-sm font-medium text-muted-foreground transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border/70 hover:bg-accent hover:text-foreground text-sm font-medium text-muted-foreground transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             title="Export Chat to Markdown"
           >
             <Download className="h-4 w-4" />
-            <span className="hidden sm:inline">Export</span>
+            <span className="hidden lg:inline">Export</span>
           </button>
         </div>
       </div>
@@ -418,53 +485,142 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
               onChange={handleFileChange}
               className="hidden"
             />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="absolute left-2 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent/80 transition-colors"
-              title="Attach Image"
-            >
-              <Paperclip className="h-4 w-4" />
-            </button>
-            <input
-              value={input}
-              onChange={handleInputChange}
-              placeholder={isListening ? "Listening... Speak now" : "Message RashidBot..."}
-              className="min-h-12 sm:min-h-14 w-full resize-none border-0 bg-transparent py-3 pl-12 pr-24 text-sm sm:text-base focus:outline-none placeholder:text-muted-foreground/70"
-            />
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={toggleListening}
-                title={isListening ? "Stop listening" : "Speak to type"}
-                className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-xl transition-all",
-                  isListening
-                    ? "bg-destructive text-white animate-pulse shadow-lg ring-2 ring-destructive/50"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/80"
-                )}
-              >
-                {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-              </button>
+            
+            {walkieMode ? (
+              <div className="flex w-full items-center justify-center py-2 px-4">
+                <button
+                  type="button"
+                  onMouseDown={() => {
+                    if ('webkitSpeechRecognition' in window) {
+                      recognitionRef.current?.start();
+                      setIsListening(true);
+                    }
+                  }}
+                  onMouseUp={() => {
+                    if ('webkitSpeechRecognition' in window) {
+                      recognitionRef.current?.stop();
+                      setIsListening(false);
+                      // Give it a tiny delay for the final onresult to populate input before submitting
+                      setTimeout(() => {
+                        const evt = new Event("submit") as any;
+                        chatSubmit(evt, { body: { id, model: selectedModel, persona: selectedPersona, imageBase64 } });
+                        setImageBase64(null);
+                      }, 400);
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    if (isListening) {
+                      recognitionRef.current?.stop();
+                      setIsListening(false);
+                    }
+                  }}
+                  onTouchStart={(e) => {
+                    e.preventDefault(); // Prevent text selection on mobile
+                    if ('webkitSpeechRecognition' in window) {
+                      recognitionRef.current?.start();
+                      setIsListening(true);
+                    }
+                  }}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    if ('webkitSpeechRecognition' in window) {
+                      recognitionRef.current?.stop();
+                      setIsListening(false);
+                      setTimeout(() => {
+                        const evt = new Event("submit") as any;
+                        chatSubmit(evt, { body: { id, model: selectedModel, persona: selectedPersona, imageBase64 } });
+                        setImageBase64(null);
+                      }, 400);
+                    }
+                  }}
+                  className={cn(
+                    "w-full max-w-sm mx-auto h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-white transition-all select-none touch-none",
+                    isListening 
+                      ? "bg-rose-500 scale-95 shadow-inner" 
+                      : "bg-brand-500 shadow-md hover:bg-brand-600"
+                  )}
+                >
+                  {isListening ? (
+                    <>
+                      <Mic className="h-5 w-5 animate-pulse" />
+                      Listening... Release to Send
+                    </>
+                  ) : (
+                    <>
+                      <Radio className="h-5 w-5" />
+                      Hold to Speak
+                    </>
+                  )}
+                </button>
+              </div>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent/80 transition-colors"
+                  title="Attach Image"
+                >
+                  <Paperclip className="h-4 w-4" />
+                </button>
+                <input
+                  value={input}
+                  onChange={handleInputChange}
+                  placeholder={isListening ? "Listening... Speak now" : "Message RashidBot..."}
+                  className="min-h-12 sm:min-h-14 w-full resize-none border-0 bg-transparent py-3 pl-12 pr-[120px] text-sm sm:text-base focus:outline-none placeholder:text-muted-foreground/70"
+                />
+              </>
+            )}
+
+            {!walkieMode && (
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={improvePrompt}
+                  disabled={!input.trim() || isImproving}
+                  title="Magic Prompt Improver"
+                  className={cn(
+                    "flex h-9 w-9 items-center justify-center rounded-xl transition-all",
+                    isImproving
+                      ? "text-brand-500 animate-pulse bg-brand-500/10"
+                      : "text-muted-foreground hover:text-brand-500 hover:bg-brand-500/10 disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+                  )}
+                >
+                  <Wand2 className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={toggleListening}
+                  title={isListening ? "Stop listening" : "Speak to type"}
+                  className={cn(
+                    "flex h-9 w-9 items-center justify-center rounded-xl transition-all",
+                    isListening
+                      ? "bg-destructive text-white animate-pulse shadow-lg ring-2 ring-destructive/50"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/80"
+                  )}
+                >
+                  {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                </button>
 
               {isLoading ? (
                 <button
-                  onClick={stop}
                   type="button"
-                  className="flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                  onClick={() => stop()}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted text-muted-foreground hover:bg-accent transition-colors"
                 >
                   <Square className="h-4 w-4 fill-current" />
                 </button>
               ) : (
                 <button
                   type="submit"
-                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-600 text-white shadow-md transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-                  disabled={!input.trim()}
+                  disabled={!input.trim() && !imageBase64}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500 text-white hover:bg-brand-600 transition-colors shadow-md shadow-brand-500/20 disabled:opacity-50 disabled:shadow-none"
                 >
-                  <Send className="h-4 w-4" />
+                  <Send className="h-4 w-4 ml-0.5" />
                 </button>
               )}
             </div>
+            )}
           </form>
           <p className="mt-2 text-center text-[11px] sm:text-xs text-muted-foreground/80">
             RashidBot can make mistakes. Verify important information.
