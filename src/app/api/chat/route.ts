@@ -1,6 +1,6 @@
 import { groq } from "@/lib/groq";
 import { openai } from "@/lib/openai";
-import { mistral } from "@/lib/mistral";
+import { mistral } from "@/lib/mistral"; // OpenAI-compatible Mistral client
 import { streamText } from "ai";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -21,7 +21,7 @@ const DEFAULT_MODEL = "llama-3.3-70b-versatile";
 function getModel(modelKey: string): any {
   const cfg = MODELS[modelKey] ?? MODELS[DEFAULT_MODEL];
   if (cfg.provider === "openai")  return openai(cfg.modelId);
-  if (cfg.provider === "mistral") return mistral(cfg.modelId);
+  if (cfg.provider === "mistral") return mistral(cfg.modelId); // routes via OpenAI-compat API
   return groq(cfg.modelId);
 }
 
