@@ -9,12 +9,9 @@ import remarkGfm from "remark-gfm";
 import { AILogo } from "@/components/ui/ai-logo";
 
 const MODELS = [
-  { key: "llama-3.3-70b-versatile",       label: "Llama 3.3 70B",       badge: "Free",    icon: "⚡" },
-  { key: "llama-3.1-8b-instant",          label: "Llama 3.1 8B",        badge: "Fast",    icon: "🚀" },
-  { key: "mixtral-8x7b-32768",            label: "Mixtral 8x7B",        badge: "Free",    icon: "🧠" },
-  { key: "deepseek-r1-distill-llama-70b", label: "DeepSeek R1",         badge: "Free",    icon: "🔬" },
-  { key: "gpt-4o",                         label: "GPT-4o",              badge: "OpenAI",  icon: "🤖" },
-  { key: "gpt-4o-mini",                    label: "GPT-4o Mini",         badge: "OpenAI",  icon: "🤖" },
+  { key: "llama-3.3-70b-versatile", label: "Llama 3.3 70B", badge: "Free",   icon: "⚡" },
+  { key: "gpt-4o",                   label: "GPT-4o",         badge: "OpenAI", icon: "🤖" },
+  { key: "gpt-4o-mini",              label: "GPT-4o Mini",    badge: "OpenAI", icon: "🤖" },
 ];
 
 type DBMessage = {

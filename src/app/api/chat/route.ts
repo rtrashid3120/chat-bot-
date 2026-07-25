@@ -8,12 +8,9 @@ export const maxDuration = 60;
 
 // All supported models
 const MODELS: Record<string, { provider: "groq" | "openai"; modelId: string }> = {
-  "llama-3.3-70b-versatile":       { provider: "groq",   modelId: "llama-3.3-70b-versatile" },
-  "llama-3.1-8b-instant":          { provider: "groq",   modelId: "llama-3.1-8b-instant" },
-  "mixtral-8x7b-32768":            { provider: "groq",   modelId: "mixtral-8x7b-32768" },
-  "deepseek-r1-distill-llama-70b": { provider: "groq",   modelId: "deepseek-r1-distill-llama-70b" },
-  "gpt-4o":                        { provider: "openai", modelId: "gpt-4o" },
-  "gpt-4o-mini":                   { provider: "openai", modelId: "gpt-4o-mini" },
+  "llama-3.3-70b-versatile": { provider: "groq",   modelId: "llama-3.3-70b-versatile" },
+  "gpt-4o":                  { provider: "openai", modelId: "gpt-4o" },
+  "gpt-4o-mini":             { provider: "openai", modelId: "gpt-4o-mini" },
 };
 
 const DEFAULT_MODEL = "llama-3.3-70b-versatile";
