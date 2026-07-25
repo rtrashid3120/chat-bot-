@@ -106,7 +106,7 @@ export async function POST(req: Request) {
             role: "system", 
             content: "You are a search intent classifier. If the user's latest message requires searching the web for real-time information, news, current events, or facts you might not know, output a 1-6 word search query. Otherwise, output EXACTLY the word 'NO_SEARCH'. Reply with nothing else." 
           },
-          ...messages.slice(-3).map((m: any) => ({ role: m.role, content: m.content }))
+          ...messages.slice(-3).map((m: { role: string; content: string }) => ({ role: m.role, content: m.content }))
         ]
       });
       
