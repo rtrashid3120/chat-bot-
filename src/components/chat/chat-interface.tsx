@@ -31,10 +31,10 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const { messages, input, handleInputChange, handleSubmit, status, stop } = useChat({
+  const { messages, input, handleInputChange, handleSubmit: chatSubmit, status, stop } = useChat({
     id,
     initialMessages: initialMessages as import("@ai-sdk/react").Message[],
-    body: { id, model: selectedModel },
+    body: { id },
   });
 
   const isLoading = status === "submitted" || status === "streaming";
@@ -214,7 +214,7 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
             onSubmit={(e) => {
               e.preventDefault();
               if (!input.trim() && !isLoading) return;
-              handleSubmit(e);
+              chatSubmit(e, { body: { id, model: selectedModel } });
             }}
             className="relative flex items-center shadow-lg rounded-2xl bg-card border border-border/80 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 transition-all"
           >
