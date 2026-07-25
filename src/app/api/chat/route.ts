@@ -53,14 +53,20 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { messages, id, model: selectedModel, persona } = body;
+    const { messages, id, model: selectedModel, persona, imageBase64 } = body;
 
     if (!messages || messages.length === 0) {
       return new Response("No messages provided", { status: 400 });
     }
 
-    const isMistral = selectedModel === "open-mistral-7b";
-    const modelKey = isMistral ? "open-mistral-7b" : DEFAULT_MODEL;
+    let isMistral = selectedModel === "open-mistral-7b";
+    let modelKey = isMistral ? "open-mistral-7b" : DEFAULT_MODEL;
+    
+    // Automatically switch to Vision model if an image is uploaded
+    if (imageBase64) {
+      modelKey = "llama-3.2-90b-vision-preview";
+      isMistral = false; // Must use Groq for vision
+    }
     const lastMessage = messages[messages.length - 1];
     const userId = session.user.id as string;
 
@@ -72,16 +78,19 @@ export async function POST(req: Request) {
       });
 
       const isDefaultTitle = !conv || conv.title === "New Chat" || conv.title.trim() === "";
-      const snippetTitle =
-        lastMessage.content.length > 35
+      let snippetTitle = "Image Upload";
+      
+      if (typeof lastMessage.content === "string") {
+        snippetTitle = lastMessage.content.length > 35
           ? `${lastMessage.content.slice(0, 35)}...`
-          : lastMessage.content;
+          : lastMessage.content || "Image Upload";
+      }
 
       await prisma.message.create({
         data: {
           conversationId: id,
           role: "user",
-          content: lastMessage.content,
+          content: typeof lastMessage.content === "string" ? lastMessage.content : "[Image Uploaded]",
           model: modelKey,
         },
       });
@@ -147,9 +156,25 @@ export async function POST(req: Request) {
     const basePersona = PERSONA_PROMPTS[persona as string] || PERSONA_PROMPTS["default"];
     const systemPrompt = basePersona + searchContext;
     
+    // Process messages for Multimodal (Vision) if image is present
+    const formattedMessages = [...messages];
+    if (imageBase64) {
+      const lastUserMsgIdx = formattedMessages.findLastIndex((m: { role: string }) => m.role === "user");
+      if (lastUserMsgIdx !== -1) {
+        const textContent = formattedMessages[lastUserMsgIdx].content;
+        formattedMessages[lastUserMsgIdx] = {
+          ...formattedMessages[lastUserMsgIdx],
+          content: [
+            { type: "text", text: typeof textContent === "string" && textContent.trim() ? textContent : "Please analyze this image." },
+            { type: "image", image: imageBase64 }
+          ]
+        };
+      }
+    }
+
     const messagesForModel = [
       { role: "system", content: systemPrompt },
-      ...messages
+      ...formattedMessages
     ];
 
     // ── Mistral: direct fetch streaming ─────────────────────────────────────
