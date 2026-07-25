@@ -8,9 +8,14 @@ export const maxDuration = 60;
 const DEFAULT_MODEL = "llama-3.3-70b-versatile";
 
 // ── Direct Mistral streaming via fetch ──────────────────────────────────────
-async function streamMistral(messages: { role: string; content: string }[]) {
+async function streamMistral(rawMessages: { role: string; content: string; [key: string]: unknown }[]) {
   const apiKey = process.env.MISTRAL_API_KEY;
   if (!apiKey) throw new Error("MISTRAL_API_KEY not set");
+
+  // Mistral only accepts role + content — strip any extra AI SDK fields
+  const messages = rawMessages
+    .filter((m) => m.role === "user" || m.role === "assistant" || m.role === "system")
+    .map((m) => ({ role: m.role, content: String(m.content) }));
 
   const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
     method: "POST",
