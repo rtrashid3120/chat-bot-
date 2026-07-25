@@ -42,9 +42,11 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  
   const dropdownRef = useRef<HTMLDivElement>(null);
   const personaRef = useRef<HTMLDivElement>(null);
   const lastSpokenId = useRef<string | null>(null);
+  const walkieSubmitRequestedRef = useRef(false);
 
   const { messages, input, setInput, handleInputChange, handleSubmit: chatSubmit, status, stop } = useChat({
     id,
@@ -113,6 +115,7 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
     if (isListening) {
       recognitionRef.current?.stop();
       setIsListening(false);
+      walkieSubmitRequestedRef.current = false; // Reset on manual stop
       return;
     }
 
@@ -129,7 +132,13 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
     recognition.interimResults = false;
 
     recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
+    recognition.onend = () => {
+      setIsListening(false);
+      if (walkieSubmitRequestedRef.current) {
+        walkieSubmitRequestedRef.current = false;
+        setTimeout(() => document.getElementById("hidden-submit-btn")?.click(), 100);
+      }
+    };
     recognition.onerror = () => setIsListening(false);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -491,32 +500,32 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
                 <button
                   type="button"
                   onMouseDown={() => {
+                    walkieSubmitRequestedRef.current = false;
                     if (!isListening) toggleListening();
                   }}
                   onMouseUp={() => {
                     if (isListening) {
-                      toggleListening(); // stops it
-                      setTimeout(() => {
-                        document.getElementById("hidden-submit-btn")?.click();
-                      }, 500);
+                      walkieSubmitRequestedRef.current = true;
+                      recognitionRef.current?.stop();
                     }
                   }}
                   onMouseLeave={() => {
                     if (isListening) {
-                      toggleListening();
+                      recognitionRef.current?.stop();
+                      setIsListening(false);
+                      walkieSubmitRequestedRef.current = false;
                     }
                   }}
                   onTouchStart={(e) => {
                     e.preventDefault(); 
+                    walkieSubmitRequestedRef.current = false;
                     if (!isListening) toggleListening();
                   }}
                   onTouchEnd={(e) => {
                     e.preventDefault();
                     if (isListening) {
-                      toggleListening();
-                      setTimeout(() => {
-                        document.getElementById("hidden-submit-btn")?.click();
-                      }, 500);
+                      walkieSubmitRequestedRef.current = true;
+                      recognitionRef.current?.stop();
                     }
                   }}
                   className={cn(
