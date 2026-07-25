@@ -1,9 +1,29 @@
 import { groq } from "@/lib/groq";
+import { openai } from "@/lib/openai";
 import { streamText } from "ai";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export const maxDuration = 60;
+
+// All supported models
+const MODELS: Record<string, { provider: "groq" | "openai"; modelId: string }> = {
+  "llama-3.3-70b-versatile":       { provider: "groq",   modelId: "llama-3.3-70b-versatile" },
+  "llama-3.1-8b-instant":          { provider: "groq",   modelId: "llama-3.1-8b-instant" },
+  "mixtral-8x7b-32768":            { provider: "groq",   modelId: "mixtral-8x7b-32768" },
+  "deepseek-r1-distill-llama-70b": { provider: "groq",   modelId: "deepseek-r1-distill-llama-70b" },
+  "gpt-4o":                        { provider: "openai", modelId: "gpt-4o" },
+  "gpt-4o-mini":                   { provider: "openai", modelId: "gpt-4o-mini" },
+};
+
+const DEFAULT_MODEL = "llama-3.3-70b-versatile";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getModel(modelKey: string): any {
+  const cfg = MODELS[modelKey] ?? MODELS[DEFAULT_MODEL];
+  if (cfg.provider === "openai") return openai(cfg.modelId);
+  return groq(cfg.modelId);
+}
 
 export async function POST(req: Request) {
   try {
@@ -13,14 +33,14 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { messages, id } = body;
+    const { messages, id, model: selectedModel } = body;
 
     if (!messages || messages.length === 0) {
       return new Response("No messages provided", { status: 400 });
     }
 
+    const modelKey = MODELS[selectedModel] ? selectedModel : DEFAULT_MODEL;
     const lastMessage = messages[messages.length - 1];
-    const modelToUse = "llama-3.3-70b-versatile";
     const userId = session.user.id as string;
 
     // Save user message to DB
@@ -41,7 +61,7 @@ export async function POST(req: Request) {
           conversationId: id,
           role: "user",
           content: lastMessage.content,
-          model: modelToUse,
+          model: modelKey,
         },
       });
 
@@ -56,7 +76,7 @@ export async function POST(req: Request) {
     }
 
     const result = streamText({
-      model: groq(modelToUse),
+      model: getModel(modelKey),
       messages,
       onFinish: async ({ text, usage }) => {
         if (id) {
@@ -65,7 +85,7 @@ export async function POST(req: Request) {
               conversationId: id,
               role: "assistant",
               content: text,
-              model: modelToUse,
+              model: modelKey,
               tokens: usage.totalTokens,
             },
           });
@@ -79,7 +99,7 @@ export async function POST(req: Request) {
             data: {
               userId,
               conversationId: id,
-              model: modelToUse,
+              model: modelKey,
               inputTokens: usage.promptTokens || 0,
               outputTokens: usage.completionTokens || 0,
               totalTokens: usage.totalTokens || 0,

@@ -2,11 +2,20 @@
 
 import { useChat } from "@ai-sdk/react";
 import { useEffect, useRef, useState } from "react";
-import { Send, Square, User, Mic, MicOff } from "lucide-react";
+import { Send, Square, User, Mic, MicOff, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { AILogo } from "@/components/ui/ai-logo";
+
+const MODELS = [
+  { key: "llama-3.3-70b-versatile",       label: "Llama 3.3 70B",       badge: "Free",    icon: "⚡" },
+  { key: "llama-3.1-8b-instant",          label: "Llama 3.1 8B",        badge: "Fast",    icon: "🚀" },
+  { key: "mixtral-8x7b-32768",            label: "Mixtral 8x7B",        badge: "Free",    icon: "🧠" },
+  { key: "deepseek-r1-distill-llama-70b", label: "DeepSeek R1",         badge: "Free",    icon: "🔬" },
+  { key: "gpt-4o",                         label: "GPT-4o",              badge: "OpenAI",  icon: "🤖" },
+  { key: "gpt-4o-mini",                    label: "GPT-4o Mini",         badge: "OpenAI",  icon: "🤖" },
+];
 
 type DBMessage = {
   id: string;
@@ -20,10 +29,14 @@ type ChatInterfaceProps = {
 };
 
 export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) {
+  const [selectedModel, setSelectedModel] = useState("llama-3.3-70b-versatile");
+  const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   const { messages, input, handleInputChange, handleSubmit, status, stop } = useChat({
     id,
     initialMessages: initialMessages as import("@ai-sdk/react").Message[],
-    body: { id },
+    body: { id, model: selectedModel },
   });
 
   const isLoading = status === "submitted" || status === "streaming";
@@ -37,6 +50,17 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setModelDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   const toggleListening = () => {
     if (isListening) {
@@ -65,7 +89,6 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
       if (transcript) {
-        // Auto-correct: capitalize first letter and format cleanly
         const text = transcript.trim();
         const corrected = text.charAt(0).toUpperCase() + text.slice(1);
         const newInput = input ? `${input} ${corrected}` : corrected;
@@ -78,16 +101,66 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
     recognition.start();
   };
 
+  const currentModel = MODELS.find((m) => m.key === selectedModel) ?? MODELS[0];
+
   return (
     <div className="flex h-full w-full flex-col bg-background overflow-hidden relative">
       {/* Background ambient glowing shapes */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 right-10 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
 
+      {/* Model Selector Bar */}
+      <div className="relative z-20 flex items-center justify-center pt-3 pb-1 px-4">
+        <div ref={dropdownRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setModelDropdownOpen((v) => !v)}
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-card border border-border/70 hover:border-brand-500/50 text-sm font-medium text-foreground transition-all shadow-sm hover:shadow-brand-500/10 hover:shadow-md group"
+          >
+            <span className="text-base leading-none">{currentModel.icon}</span>
+            <span className="text-foreground/90">{currentModel.label}</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-brand-500/15 text-brand-400 font-semibold">
+              {currentModel.badge}
+            </span>
+            <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", modelDropdownOpen && "rotate-180")} />
+          </button>
+
+          {modelDropdownOpen && (
+            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-64 rounded-2xl bg-card border border-border/80 shadow-2xl shadow-black/40 overflow-hidden z-50 animate-fade-in">
+              <div className="px-3 py-2 border-b border-border/60">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Select AI Model</p>
+              </div>
+              {MODELS.map((m) => (
+                <button
+                  key={m.key}
+                  type="button"
+                  onClick={() => { setSelectedModel(m.key); setModelDropdownOpen(false); }}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-left",
+                    selectedModel === m.key
+                      ? "bg-brand-500/15 text-brand-400"
+                      : "text-foreground hover:bg-accent/60"
+                  )}
+                >
+                  <span className="text-base">{m.icon}</span>
+                  <span className="flex-1 font-medium">{m.label}</span>
+                  <span className={cn(
+                    "text-[10px] px-1.5 py-0.5 rounded-md font-semibold",
+                    m.badge === "OpenAI" ? "bg-emerald-500/15 text-emerald-400" : "bg-brand-500/15 text-brand-400"
+                  )}>
+                    {m.badge}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="flex-1 overflow-y-auto px-3 py-4 sm:px-6 lg:px-8 z-10" ref={scrollRef}>
         <div className="mx-auto max-w-3xl space-y-4 pb-12">
           {messages.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center space-y-5 pt-20 sm:pt-32 text-center px-4">
+            <div className="flex h-full flex-col items-center justify-center space-y-5 pt-16 sm:pt-28 text-center px-4">
               <AILogo size="xl" />
               <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-foreground via-purple-300 to-cyan-300 bg-clip-text text-transparent">
                 How can I help you today?
