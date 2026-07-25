@@ -1,24 +1,37 @@
 import { groq } from "@/lib/groq";
-import { mistral } from "@/lib/mistral";
 import { streamText } from "ai";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export const maxDuration = 60;
 
-// All supported models
-const MODELS: Record<string, { provider: "groq" | "mistral"; modelId: string }> = {
-  "llama-3.3-70b-versatile": { provider: "groq",    modelId: "llama-3.3-70b-versatile" },
-  "open-mistral-7b":         { provider: "mistral", modelId: "open-mistral-7b" },
-};
-
 const DEFAULT_MODEL = "llama-3.3-70b-versatile";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getModel(modelKey: string): any {
-  const cfg = MODELS[modelKey] ?? MODELS[DEFAULT_MODEL];
-  if (cfg.provider === "mistral") return mistral(cfg.modelId);
-  return groq(cfg.modelId);
+// ── Direct Mistral streaming via fetch ──────────────────────────────────────
+async function streamMistral(messages: { role: string; content: string }[]) {
+  const apiKey = process.env.MISTRAL_API_KEY;
+  if (!apiKey) throw new Error("MISTRAL_API_KEY not set");
+
+  const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "open-mistral-7b",
+      messages,
+      stream: true,
+      max_tokens: 2048,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Mistral API error: ${res.status} ${err}`);
+  }
+
+  return res;
 }
 
 export async function POST(req: Request) {
@@ -35,15 +48,8 @@ export async function POST(req: Request) {
       return new Response("No messages provided", { status: 400 });
     }
 
-    const modelKey = MODELS[selectedModel] ? selectedModel : DEFAULT_MODEL;
-
-    // Validate API keys before calling
-    if (MODELS[modelKey]?.provider === "mistral" && !process.env.MISTRAL_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "Mistral API key not configured on server." }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
+    const isMistral = selectedModel === "open-mistral-7b";
+    const modelKey = isMistral ? "open-mistral-7b" : DEFAULT_MODEL;
     const lastMessage = messages[messages.length - 1];
     const userId = session.user.id as string;
 
@@ -79,8 +85,75 @@ export async function POST(req: Request) {
       });
     }
 
+    // ── Mistral: direct fetch streaming ─────────────────────────────────────
+    if (isMistral) {
+      const mistralRes = await streamMistral(messages);
+
+      // Collect the full text from SSE stream and save to DB when done
+      const encoder = new TextEncoder();
+      const decoder = new TextDecoder();
+      let fullText = "";
+
+      const stream = new ReadableStream({
+        async start(controller) {
+          const reader = mistralRes.body!.getReader();
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              const chunk = decoder.decode(value, { stream: true });
+              const lines = chunk.split("\n").filter((l) => l.startsWith("data: "));
+
+              for (const line of lines) {
+                const data = line.slice(6).trim();
+                if (data === "[DONE]") continue;
+                try {
+                  const parsed = JSON.parse(data);
+                  const content = parsed.choices?.[0]?.delta?.content ?? "";
+                  if (content) {
+                    fullText += content;
+                    // Emit in Vercel AI SDK data stream format
+                    controller.enqueue(encoder.encode(`0:${JSON.stringify(content)}\n`));
+                  }
+                } catch {}
+              }
+            }
+          } finally {
+            reader.releaseLock();
+          }
+
+          // Save assistant response to DB
+          if (id && fullText) {
+            await prisma.message.create({
+              data: {
+                conversationId: id,
+                role: "assistant",
+                content: fullText,
+                model: modelKey,
+              },
+            });
+            await prisma.conversation.update({
+              where: { id },
+              data: { messageCount: { increment: 1 } },
+            });
+          }
+
+          controller.close();
+        },
+      });
+
+      return new Response(stream, {
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "X-Vercel-AI-Data-Stream": "v1",
+        },
+      });
+    }
+
+    // ── Groq (Llama) via AI SDK streamText ──────────────────────────────────
     const result = streamText({
-      model: getModel(modelKey),
+      model: groq(DEFAULT_MODEL),
       messages,
       onFinish: async ({ text, usage }) => {
         if (id) {
