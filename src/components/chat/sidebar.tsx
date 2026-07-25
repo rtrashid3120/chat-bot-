@@ -147,7 +147,7 @@ export function Sidebar({
       </header>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col h-screen shrink-0">
+      <aside className="hidden md:flex flex-col h-[100dvh] shrink-0">
         {sidebarContent}
       </aside>
 

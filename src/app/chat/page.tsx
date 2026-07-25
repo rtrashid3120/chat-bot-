@@ -17,7 +17,7 @@ export default async function ChatPage() {
   const conversations = await getConversations();
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-background overflow-hidden">
+    <div className="flex flex-col md:flex-row h-[100dvh] bg-background overflow-hidden">
       <Sidebar conversations={conversations} currentId={undefined} />
       <main className="flex-1 flex flex-col items-center justify-center gap-6 text-center p-6 sm:p-8">
         <AILogo size="xl" />
