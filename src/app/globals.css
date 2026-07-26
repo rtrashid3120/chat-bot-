@@ -1,28 +1,28 @@
 @import "tailwindcss";
 
 :root {
-  --background: hsl(0, 0%, 0%);
-  --foreground: hsl(0, 0%, 100%);
-  --card: hsl(0, 0%, 4%);
-  --card-foreground: hsl(0, 0%, 100%);
-  --popover: hsl(0, 0%, 4%);
-  --popover-foreground: hsl(0, 0%, 100%);
-  --primary: hsl(0, 0%, 100%);
-  --primary-foreground: hsl(0, 0%, 0%);
-  --secondary: hsl(0, 0%, 9%);
-  --secondary-foreground: hsl(0, 0%, 100%);
-  --muted: hsl(0, 0%, 9%);
-  --muted-foreground: hsl(0, 0%, 65%);
-  --accent: hsl(0, 0%, 12%);
-  --accent-foreground: hsl(0, 0%, 100%);
-  --destructive: hsl(0, 0%, 100%);
-  --destructive-foreground: hsl(0, 0%, 0%);
-  --border: hsl(0, 0%, 15%);
-  --input: hsl(0, 0%, 15%);
-  --ring: hsl(0, 0%, 100%);
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(0, 0%, 0%);
+  --card: hsl(0, 0%, 98%);
+  --card-foreground: hsl(0, 0%, 0%);
+  --popover: hsl(0, 0%, 98%);
+  --popover-foreground: hsl(0, 0%, 0%);
+  --primary: hsl(0, 0%, 0%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(0, 0%, 93%);
+  --secondary-foreground: hsl(0, 0%, 0%);
+  --muted: hsl(0, 0%, 93%);
+  --muted-foreground: hsl(0, 0%, 40%);
+  --accent: hsl(0, 0%, 90%);
+  --accent-foreground: hsl(0, 0%, 0%);
+  --destructive: hsl(0, 0%, 0%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --border: hsl(0, 0%, 85%);
+  --input: hsl(0, 0%, 85%);
+  --ring: hsl(0, 0%, 0%);
   --radius: 0.75rem;
-  --brand-500: hsl(0, 0%, 100%);
-  --brand-600: hsl(0, 0%, 80%);
+  --brand-500: hsl(0, 0%, 0%);
+  --brand-600: hsl(0, 0%, 20%);
 }
 
 * {
@@ -35,8 +35,8 @@ body {
   color: var(--foreground);
   font-family: var(--font-inter, system-ui, sans-serif);
   
-  /* Moving monochrome gradient animation */
-  background: linear-gradient(270deg, #000000, #0a0a0a, #141414, #000000);
+  /* Moving light monochrome gradient animation */
+  background: linear-gradient(270deg, #ffffff, #f0f0f0, #e6e6e6, #ffffff);
   background-size: 400% 400%;
   animation: moveGradient 15s ease infinite;
 }

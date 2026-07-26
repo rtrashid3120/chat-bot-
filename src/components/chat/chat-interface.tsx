@@ -447,14 +447,9 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
             ))
           )}
           {isLoading && messages[messages.length - 1]?.role === "user" && (
-            <div className="flex w-full animate-fade-in gap-3 sm:gap-4 rounded-2xl p-4 bg-card/90 border border-border/70 shadow-md backdrop-blur-md">
-              <AILogo size="sm" />
+            <div className="flex w-full animate-fade-in gap-3 sm:gap-4 rounded-2xl p-4 bg-transparent">
               <div className="flex-1 flex items-center px-1">
-                <div className="flex gap-1.5 items-center">
-                  <span className="h-2.5 w-2.5 rounded-full bg-cyan-400 animate-ping" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-indigo-500 animate-ping [animation-delay:0.2s]" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-purple-500 animate-ping [animation-delay:0.4s]" />
-                </div>
+                <AILogo size="md" className="animate-spin [animation-duration:3s] animate-pulse" />
               </div>
             </div>
           )}
