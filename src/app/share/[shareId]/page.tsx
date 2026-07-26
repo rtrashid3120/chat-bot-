@@ -38,7 +38,7 @@ export default async function SharePage({ params }: SharePageProps) {
           </div>
           <a 
             href="/" 
-            className="text-sm px-4 py-2 rounded-xl bg-brand-500/15 text-brand-500 hover:bg-brand-500 hover:text-white transition-all font-medium"
+            className="text-sm px-4 py-2 rounded-xl bg-brand-500/15 text-brand-500 hover:bg-brand-500 hover:text-primary-foreground transition-all font-medium"
           >
             Try Promptly-AI
           </a>
@@ -51,14 +51,14 @@ export default async function SharePage({ params }: SharePageProps) {
             <div
               className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-5 py-4 ${
                 m.role === "user"
-                  ? "bg-brand-500 text-white rounded-br-none shadow-brand-500/20"
+                  ? "bg-brand-500 text-primary-foreground rounded-br-none shadow-brand-500/20"
                   : "bg-card border border-border/50 text-card-foreground rounded-bl-none shadow-sm"
               } shadow-lg relative animate-fade-in`}
             >
               {m.role === "assistant" && (
                 <div className="flex items-center gap-2 mb-2">
                   <div className="h-6 w-6 rounded-full bg-gradient-to-br from-brand-500 to-indigo-600 flex items-center justify-center shrink-0 shadow-inner">
-                    <span className="text-[10px] font-bold text-white">RB</span>
+                    <span className="text-[10px] font-bold text-primary-foreground">RB</span>
                   </div>
                   <span className="text-xs font-semibold text-brand-500">Promptly-AI</span>
                 </div>

@@ -234,14 +234,14 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
       <div className="absolute bottom-10 right-10 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
 
       {/* Top Action Bar */}
-      <div className="relative z-20 flex items-center justify-between pt-3 pb-1 px-4 max-w-3xl mx-auto w-full">
+      <div className="relative z-20 flex flex-wrap items-center justify-between gap-y-2 pt-2 sm:pt-3 pb-1 px-2 sm:px-4 max-w-3xl mx-auto w-full">
         <div className="flex items-center gap-2">
           {/* Model Selector */}
           <div ref={dropdownRef} className="relative">
             <button
               type="button"
               onClick={() => { setModelDropdownOpen((v) => !v); setPersonaDropdownOpen(false); }}
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-card border border-border/70 hover:border-brand-500/50 text-sm font-medium text-foreground transition-all shadow-sm hover:shadow-brand-500/10 hover:shadow-md group"
+              className="flex items-center gap-2 px-2 sm:px-3.5 py-1.5 rounded-xl bg-card border border-border/70 hover:border-brand-500/50 text-sm font-medium text-foreground transition-all shadow-sm hover:shadow-brand-500/10 hover:shadow-md group"
             >
               <span className="text-base leading-none">{currentModel.icon}</span>
               <span className="inline-block max-w-[70px] sm:max-w-none truncate text-foreground/90">{currentModel.label}</span>
@@ -545,7 +545,7 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
                     }
                   }}
                   className={cn(
-                    "w-full max-w-sm mx-auto h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-white transition-all select-none touch-none",
+                    "w-full max-w-sm mx-auto h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-primary-foreground transition-all select-none touch-none",
                     isListening 
                       ? "bg-rose-500 scale-95 shadow-inner" 
                       : "bg-brand-500 shadow-md hover:bg-brand-600"
@@ -606,7 +606,7 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
                   className={cn(
                     "flex h-9 w-9 items-center justify-center rounded-xl transition-all",
                     isListening
-                      ? "bg-destructive text-white animate-pulse shadow-lg ring-2 ring-destructive/50"
+                      ? "bg-destructive text-destructive-foreground animate-pulse shadow-lg ring-2 ring-destructive/50"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/80"
                   )}
                 >
@@ -625,7 +625,7 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
                 <button
                   type="submit"
                   disabled={!input.trim() && !imageBase64}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500 text-white hover:bg-brand-600 transition-colors shadow-md shadow-brand-500/20 disabled:opacity-50 disabled:shadow-none"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500 text-primary-foreground hover:bg-brand-600 transition-colors shadow-md shadow-brand-500/20 disabled:opacity-50 disabled:shadow-none"
                 >
                   <Send className="h-4 w-4 ml-0.5" />
                 </button>

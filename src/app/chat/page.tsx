@@ -26,7 +26,7 @@ export default async function ChatPage() {
           <p className="text-muted-foreground mt-2 text-sm sm:text-base">Start a new conversation with Promptly-AI</p>
         </div>
         <form action={createConversation}>
-          <button type="submit" className="flex items-center gap-2 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-600 text-white font-semibold px-6 py-3.5 rounded-xl transition-all shadow-lg hover:shadow-brand-500/25 active:scale-95">
+          <button type="submit" className="flex items-center gap-2 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-600 text-primary-foreground font-semibold px-6 py-3.5 rounded-xl transition-all shadow-lg hover:shadow-brand-500/25 active:scale-95">
             <PlusCircle className="h-5 w-5" />
             New Chat
           </button>

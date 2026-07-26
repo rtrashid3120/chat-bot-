@@ -67,7 +67,7 @@ export default function RegisterPage() {
                 <input name="password" type="password" required minLength={8} className="w-full bg-secondary border border-border rounded-lg pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500/50 transition-all" placeholder="Min 8 characters" />
               </div>
             </div>
-            <button type="submit" disabled={loading} className="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold py-2.5 rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2">
+            <button type="submit" disabled={loading} className="w-full bg-brand-500 hover:bg-brand-600 text-primary-foreground font-semibold py-2.5 rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {loading ? "Creating account..." : "Create account"}
             </button>
