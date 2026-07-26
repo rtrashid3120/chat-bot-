@@ -234,7 +234,7 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
       <div className="absolute bottom-10 right-10 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
 
       {/* Top Action Bar */}
-      <div className="relative z-20 flex flex-wrap items-center justify-between gap-y-2 pt-2 sm:pt-3 pb-1 px-2 sm:px-4 max-w-3xl mx-auto w-full">
+      <div className="relative z-20 flex flex-wrap md:flex-nowrap items-center justify-between gap-y-2 gap-x-1 pt-2 sm:pt-3 pb-1 px-2 sm:px-4 max-w-4xl xl:max-w-5xl mx-auto w-full">
         <div className="flex items-center gap-2">
           {/* Model Selector */}
           <div ref={dropdownRef} className="relative">
@@ -387,7 +387,7 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 py-4 sm:px-6 lg:px-8 z-10" ref={scrollRef}>
-        <div className="mx-auto max-w-3xl space-y-4 pb-12">
+        <div className="mx-auto max-w-4xl xl:max-w-5xl space-y-4 pb-12">
           {messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center space-y-5 pt-16 sm:pt-28 text-center px-4">
               <AILogo size="xl" />
@@ -478,7 +478,7 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
       </div>
 
       <div className="p-3 sm:p-4 sm:px-6 lg:px-8 bg-background/90 backdrop-blur-xl border-t border-border/60">
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-4xl xl:max-w-5xl">
           {/* Image Preview */}
           {imageBase64 && (
             <div className="mb-3 relative inline-block animate-fade-in">
