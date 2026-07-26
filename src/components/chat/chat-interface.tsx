@@ -93,12 +93,12 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
 
   const exportChat = () => {
     if (messages.length === 0) return;
-    const content = messages.map(m => `### ${m.role === 'user' ? 'You' : 'RashidBot'}\n${m.content}\n`).join('\n---\n\n');
+    const content = messages.map(m => `### ${m.role === 'user' ? 'You' : 'Promptly-AI'}\n${m.content}\n`).join('\n---\n\n');
     const blob = new Blob([content], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `RashidBot-Chat-${new Date().toISOString().slice(0, 10)}.md`;
+    a.download = `Promptly-AI-Chat-${new Date().toISOString().slice(0, 10)}.md`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -374,7 +374,7 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
                 How can I help you today?
               </h2>
               <p className="text-muted-foreground max-w-sm text-sm sm:text-base">
-                I&apos;m RashidBot, your personal AI assistant. Ask me anything!
+                I&apos;m Promptly-AI, your personal AI assistant. Ask me anything!
               </p>
             </div>
           ) : (
@@ -561,7 +561,7 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
                 <input
                   value={input}
                   onChange={handleInputChange}
-                  placeholder={isListening ? "Listening... Speak now" : "Message RashidBot..."}
+                  placeholder={isListening ? "Listening... Speak now" : "Message Promptly-AI..."}
                   className="min-h-12 sm:min-h-14 w-full resize-none border-0 bg-transparent py-3 pl-12 pr-[120px] text-sm sm:text-base focus:outline-none placeholder:text-muted-foreground/70"
                 />
               </>
@@ -619,7 +619,7 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
             <button id="hidden-submit-btn" type="submit" className="hidden" />
           </form>
           <p className="mt-2 text-center text-[11px] sm:text-xs text-muted-foreground/80">
-            RashidBot can make mistakes. Verify important information.
+            Promptly-AI can make mistakes. Verify important information. Created by Mohamed Rashid.
           </p>
         </div>
       </div>

@@ -30,7 +30,7 @@ export default async function SharePage({ params }: SharePageProps) {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-brand-500 to-indigo-500">
-              RashidBot
+              Promptly-AI
             </h1>
             <p className="text-xs text-muted-foreground mt-1">
               Shared Conversation • {conversation.messages.length} messages
@@ -40,7 +40,7 @@ export default async function SharePage({ params }: SharePageProps) {
             href="/" 
             className="text-sm px-4 py-2 rounded-xl bg-brand-500/15 text-brand-500 hover:bg-brand-500 hover:text-white transition-all font-medium"
           >
-            Try RashidBot
+            Try Promptly-AI
           </a>
         </div>
       </header>
@@ -60,7 +60,7 @@ export default async function SharePage({ params }: SharePageProps) {
                   <div className="h-6 w-6 rounded-full bg-gradient-to-br from-brand-500 to-indigo-600 flex items-center justify-center shrink-0 shadow-inner">
                     <span className="text-[10px] font-bold text-white">RB</span>
                   </div>
-                  <span className="text-xs font-semibold text-brand-500">RashidBot</span>
+                  <span className="text-xs font-semibold text-brand-500">Promptly-AI</span>
                 </div>
               )}
               

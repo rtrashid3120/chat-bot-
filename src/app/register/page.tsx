@@ -37,7 +37,7 @@ export default function RegisterPage() {
         <div className="flex flex-col items-center mb-8">
           <AILogo size="lg" className="mb-4" />
           <h1 className="text-3xl font-bold text-foreground">Create account</h1>
-          <p className="text-muted-foreground mt-1">Join RashidBot today</p>
+          <p className="text-muted-foreground mt-1">Join Promptly-AI today</p>
         </div>
         <div className="bg-card border border-border rounded-2xl p-8 shadow-elevated">
           {error && (

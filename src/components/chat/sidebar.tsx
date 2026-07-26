@@ -50,7 +50,7 @@ export function Sidebar({
         <div className="flex items-center gap-2.5">
           <AILogo size="sm" />
           <span className="font-extrabold text-lg tracking-tight text-foreground bg-gradient-to-r from-purple-400 via-indigo-300 to-cyan-300 bg-clip-text text-transparent">
-            RashidBot
+            Promptly-AI
           </span>
         </div>
         <button
@@ -149,7 +149,7 @@ export function Sidebar({
 
         <div className="flex items-center gap-2">
           <AILogo size="sm" />
-          <span className="font-extrabold text-base tracking-tight bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">RashidBot</span>
+          <span className="font-extrabold text-base tracking-tight bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">Promptly-AI</span>
         </div>
 
         <form action={createConversation}>

@@ -22,8 +22,8 @@ export default async function ChatPage() {
       <main className="flex-1 flex flex-col items-center justify-center gap-6 text-center p-6 sm:p-8">
         <AILogo size="xl" />
         <div>
-          <h1 className="text-3xl font-bold text-foreground">RashidBot</h1>
-          <p className="text-muted-foreground mt-2 text-sm sm:text-base">Start a new conversation with RashidBot AI</p>
+          <h1 className="text-3xl font-bold text-foreground">Promptly-AI</h1>
+          <p className="text-muted-foreground mt-2 text-sm sm:text-base">Start a new conversation with Promptly-AI</p>
         </div>
         <form action={createConversation}>
           <button type="submit" className="flex items-center gap-2 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-600 text-white font-semibold px-6 py-3.5 rounded-xl transition-all shadow-lg hover:shadow-brand-500/25 active:scale-95">

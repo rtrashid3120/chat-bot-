@@ -112,7 +112,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
           <AILogo size="lg" className="mb-4" />
-          <h1 className="text-3xl font-bold text-foreground">Welcome to RashidBot</h1>
+          <h1 className="text-3xl font-bold text-foreground">Welcome to Promptly-AI</h1>
           <p className="text-muted-foreground mt-1 text-sm text-center">Sign in to your account or create a new one</p>
         </div>
         <Suspense fallback={<div className="h-64 rounded-2xl bg-card border border-border/80 animate-pulse" />}>

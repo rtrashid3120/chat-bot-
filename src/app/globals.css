@@ -1,28 +1,28 @@
 @import "tailwindcss";
 
 :root {
-  --background: hsl(222, 47%, 9%);
-  --foreground: hsl(210, 40%, 98%);
-  --card: hsl(217, 33%, 14%);
-  --card-foreground: hsl(210, 40%, 98%);
-  --popover: hsl(217, 33%, 14%);
-  --popover-foreground: hsl(210, 40%, 98%);
-  --primary: hsl(262, 83%, 58%);
-  --primary-foreground: hsl(210, 40%, 98%);
-  --secondary: hsl(215, 25%, 20%);
-  --secondary-foreground: hsl(210, 40%, 98%);
-  --muted: hsl(215, 25%, 20%);
-  --muted-foreground: hsl(215, 20.2%, 65.1%);
-  --accent: hsl(220, 30%, 18%);
-  --accent-foreground: hsl(210, 40%, 98%);
-  --destructive: hsl(0, 72%, 51%);
-  --destructive-foreground: hsl(210, 40%, 98%);
-  --border: hsl(217, 28%, 22%);
-  --input: hsl(217, 28%, 22%);
-  --ring: hsl(262, 83%, 58%);
+  --background: hsl(0, 0%, 0%);
+  --foreground: hsl(0, 0%, 100%);
+  --card: hsl(0, 0%, 4%);
+  --card-foreground: hsl(0, 0%, 100%);
+  --popover: hsl(0, 0%, 4%);
+  --popover-foreground: hsl(0, 0%, 100%);
+  --primary: hsl(0, 0%, 100%);
+  --primary-foreground: hsl(0, 0%, 0%);
+  --secondary: hsl(0, 0%, 9%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --muted: hsl(0, 0%, 9%);
+  --muted-foreground: hsl(0, 0%, 65%);
+  --accent: hsl(0, 0%, 12%);
+  --accent-foreground: hsl(0, 0%, 100%);
+  --destructive: hsl(0, 0%, 100%);
+  --destructive-foreground: hsl(0, 0%, 0%);
+  --border: hsl(0, 0%, 15%);
+  --input: hsl(0, 0%, 15%);
+  --ring: hsl(0, 0%, 100%);
   --radius: 0.75rem;
-  --brand-500: hsl(262, 83%, 58%);
-  --brand-600: hsl(262, 83%, 48%);
+  --brand-500: hsl(0, 0%, 100%);
+  --brand-600: hsl(0, 0%, 80%);
 }
 
 * {
@@ -34,6 +34,17 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-inter, system-ui, sans-serif);
+  
+  /* Moving monochrome gradient animation */
+  background: linear-gradient(270deg, #000000, #0a0a0a, #141414, #000000);
+  background-size: 400% 400%;
+  animation: moveGradient 15s ease infinite;
+}
+
+@keyframes moveGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 /* Utility classes used throughout the app */
