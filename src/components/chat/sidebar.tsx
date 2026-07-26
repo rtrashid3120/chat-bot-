@@ -65,7 +65,7 @@ export function Sidebar({
         <form action={createConversation}>
           <button
             type="submit"
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-600 text-primary-foreground text-sm font-semibold px-4 py-2.5 rounded-xl transition-all shadow-md hover:shadow-brand-500/25 active:scale-95 mb-3"
+            className="w-full flex items-center justify-center gap-2 bg-brand-500 hover:bg-brand-600 text-primary-foreground text-sm font-semibold px-4 py-2.5 rounded-xl transition-all shadow-md hover:shadow-brand-500/25 active:scale-95 mb-3"
           >
             <PlusCircle className="h-4 w-4" />
             New Chat

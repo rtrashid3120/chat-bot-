@@ -82,7 +82,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-600 text-primary-foreground font-semibold py-3 rounded-xl transition-all shadow-md hover:shadow-brand-500/25 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+              className="w-full bg-brand-500 hover:bg-brand-600 text-primary-foreground font-semibold py-3 rounded-xl transition-all shadow-md hover:shadow-brand-500/25 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {loading ? "Signing in..." : "Sign in"}

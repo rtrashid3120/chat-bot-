@@ -29,7 +29,7 @@ export default async function SharePage({ params }: SharePageProps) {
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/60">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-brand-500 to-indigo-500">
+            <h1 className="text-xl font-bold bg-clip-text text-brand-500">
               Promptly-AI
             </h1>
             <p className="text-xs text-muted-foreground mt-1">
@@ -57,7 +57,7 @@ export default async function SharePage({ params }: SharePageProps) {
             >
               {m.role === "assistant" && (
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="h-6 w-6 rounded-full bg-gradient-to-br from-brand-500 to-indigo-600 flex items-center justify-center shrink-0 shadow-inner">
+                  <div className="h-6 w-6 rounded-full bg-brand-500 flex items-center justify-center shrink-0 shadow-inner">
                     <span className="text-[10px] font-bold text-primary-foreground">RB</span>
                   </div>
                   <span className="text-xs font-semibold text-brand-500">Promptly-AI</span>
