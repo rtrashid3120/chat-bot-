@@ -29,7 +29,7 @@ export function AILogo({
         )}
       >
         <img 
-          src="/logo.png" 
+          src="/logo.jpg" 
           alt="Promptly-AI Logo" 
           className="h-full w-full object-cover transition-transform duration-700 group-hover:rotate-180 dark:invert"
         />

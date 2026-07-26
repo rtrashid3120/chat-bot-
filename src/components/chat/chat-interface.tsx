@@ -2,7 +2,8 @@
 
 import { useChat } from "@ai-sdk/react";
 import { useEffect, useRef, useState } from "react";
-import { Send, Square, User, Mic, MicOff, ChevronDown, Download, Volume2, Settings2, Copy, Paperclip, X, VolumeX, Share2, Wand2, Radio } from "lucide-react";
+import { useTheme } from "next-themes";
+import { Send, Square, User, Mic, MicOff, ChevronDown, Download, Volume2, Settings2, Copy, Paperclip, X, VolumeX, Share2, Wand2, Radio, Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -39,6 +40,12 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
   const [autoSpeak, setAutoSpeak] = useState(false);
   const [walkieMode, setWalkieMode] = useState(false);
   const [isImproving, setIsImproving] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -237,7 +244,7 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
               className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-card border border-border/70 hover:border-brand-500/50 text-sm font-medium text-foreground transition-all shadow-sm hover:shadow-brand-500/10 hover:shadow-md group"
             >
               <span className="text-base leading-none">{currentModel.icon}</span>
-              <span className="hidden sm:inline text-foreground/90">{currentModel.label}</span>
+              <span className="inline-block max-w-[70px] sm:max-w-none truncate text-foreground/90">{currentModel.label}</span>
               <span className="hidden sm:inline text-[10px] px-1.5 py-0.5 rounded-md bg-brand-500/15 text-brand-400 font-semibold">
                 {currentModel.badge}
               </span>
@@ -270,14 +277,14 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
           </div>
 
           {/* Persona Selector */}
-          <div ref={personaRef} className="relative hidden sm:block">
+          <div ref={personaRef} className="relative">
             <button
               type="button"
               onClick={() => { setPersonaDropdownOpen((v) => !v); setModelDropdownOpen(false); }}
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-card border border-border/70 hover:border-brand-500/50 text-sm font-medium text-foreground transition-all shadow-sm hover:shadow-brand-500/10 hover:shadow-md group"
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-card border border-border/70 hover:border-brand-500/50 text-sm font-medium text-foreground transition-all shadow-sm hover:shadow-brand-500/10 hover:shadow-md group"
             >
-              <Settings2 className="h-4 w-4 text-brand-500" />
-              <span className="text-foreground/90">{currentPersona.label}</span>
+              <Settings2 className="h-4 w-4 text-brand-500 hidden sm:block" />
+              <span className="inline-block max-w-[70px] sm:max-w-none truncate text-foreground/90">{currentPersona.label}</span>
               <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", personaDropdownOpen && "rotate-180")} />
             </button>
 
@@ -308,6 +315,20 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2">
+          {/* Theme Toggle */}
+          {mounted && (
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="p-1.5 sm:p-2 rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground transition-colors group"
+              title="Toggle theme"
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-4 w-4 sm:h-5 sm:w-5 group-hover:rotate-45 transition-transform" />
+              ) : (
+                <Moon className="h-4 w-4 sm:h-5 sm:w-5 group-hover:-rotate-12 transition-transform" />
+              )}
+            </button>
+          )}
           {/* Walkie-Talkie Toggle */}
           <button
             onClick={() => setWalkieMode(!walkieMode)}
