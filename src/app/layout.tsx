@@ -11,6 +11,8 @@ export const metadata: Metadata = {
 
 import { ThemeProvider } from "@/components/theme-provider";
 
+import { SpotlightBackground } from "@/components/ui/spotlight-background";
+
 export default function RootLayout({
   children,
 }: {
@@ -25,7 +27,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <SpotlightBackground>
+            {children}
+          </SpotlightBackground>
         </ThemeProvider>
       </body>
     </html>

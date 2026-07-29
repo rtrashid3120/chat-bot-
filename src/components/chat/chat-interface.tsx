@@ -11,6 +11,7 @@ import { AILogo } from "@/components/ui/ai-logo";
 import { CodeBlock } from "@/components/chat/code-block";
 import { InputBar } from "@/components/ui/input-bar";
 import AnimatedGradientBackground from "@/components/ui/animated-gradient-background";
+import { motion } from "framer-motion";
 
 const MODELS = [
   { key: "llama-3.3-70b-versatile", label: "Llama 3.3 70B", badge: "Free", icon: "⚡" },
@@ -42,7 +43,7 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
   const [autoSpeak, setAutoSpeak] = useState(false);
   const [walkieMode, setWalkieMode] = useState(false);
   const [isImproving, setIsImproving] = useState(false);
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -229,27 +230,34 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
   const currentModel = MODELS.find((m) => m.key === selectedModel) ?? MODELS[0];
   const currentPersona = PERSONAS.find((p) => p.key === selectedPersona) ?? PERSONAS[0];
 
+  // Extracting isDark for easy checks
+  const isDark = resolvedTheme === "dark";
+
   return (
-    <div className="flex h-full w-full flex-col bg-background overflow-hidden relative">
-      {/* Animated Gradient Background from 21st.dev */}
+    <div className="flex h-full w-full flex-col bg-transparent overflow-hidden relative">
+      {/* Animated Gradient Background from 21st.dev - Tweaked for Dark Mode */}
       <AnimatedGradientBackground
         Breathing
-        gradientColors={["#ffffff", "#f8fafc", "#ede9fe", "#ddd6fe", "#c4b5fd", "#a78bfa", "#8b5cf6"]}
+        gradientColors={
+          isDark 
+            ? ["#000000", "#0a0a0a", "#111111", "#1a1a1a", "#222222", "#000000", "#050505"]
+            : ["#ffffff", "#f8fafc", "#ede9fe", "#ddd6fe", "#c4b5fd", "#a78bfa", "#8b5cf6"]
+        }
         gradientStops={[30, 45, 58, 68, 78, 88, 100]}
-        animationSpeed={0.012}
+        animationSpeed={isDark ? 0.008 : 0.012}
         breathingRange={6}
-        containerClassName="dark:opacity-20 opacity-40"
+        containerClassName={isDark ? "opacity-100" : "opacity-30"}
       />
 
-      {/* Top Action Bar */}
-      <div className="relative z-20 flex flex-wrap md:flex-nowrap items-center justify-between gap-y-2 gap-x-1 pt-2 sm:pt-3 pb-1 px-2 sm:px-4 max-w-4xl xl:max-w-5xl mx-auto w-full">
-        <div className="flex items-center gap-2">
+      {/* Top Action Bar - Floating Pill Design */}
+      <div className="relative z-20 flex flex-wrap md:flex-nowrap items-center justify-between gap-y-2 gap-x-1 pt-4 pb-1 px-4 max-w-4xl xl:max-w-5xl mx-auto w-full">
+        <div className="flex items-center gap-2 bg-white/40 dark:bg-black/40 backdrop-blur-xl border border-white/20 dark:border-white/10 p-1.5 rounded-2xl shadow-lg">
           {/* Model Selector */}
           <div ref={dropdownRef} className="relative">
             <button
               type="button"
               onClick={() => { setModelDropdownOpen((v) => !v); setPersonaDropdownOpen(false); }}
-              className="flex items-center gap-2 px-2 sm:px-3.5 py-1.5 rounded-xl bg-card border border-border/70 hover:border-brand-500/50 text-sm font-medium text-foreground transition-all shadow-sm hover:shadow-brand-500/10 hover:shadow-md group"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-transparent hover:bg-black/5 dark:hover:bg-white/5 text-sm font-semibold text-foreground transition-all group"
             >
               <span className="text-base leading-none">{currentModel.icon}</span>
               <span className="inline-block max-w-[70px] sm:max-w-none truncate text-foreground/90">{currentModel.label}</span>
@@ -407,19 +415,22 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
               </p>
             </div>
           ) : (
-            messages.map((m) => (
-              <div
+            messages.map((m, i) => (
+              <motion.div
                 key={m.id}
+                initial={{ opacity: 0, y: 15, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.4, delay: Math.min(i * 0.02, 0.2), ease: [0.16, 1, 0.3, 1] }}
                 className={cn(
-                  "flex w-full animate-fade-in gap-3 sm:gap-4 rounded-2xl p-4 transition-all shadow-md backdrop-blur-md",
+                  "flex w-full gap-3 sm:gap-4 rounded-3xl p-4 sm:p-5 transition-all shadow-xl backdrop-blur-2xl",
                   m.role === "user"
-                    ? "bg-accent/70 ml-auto border border-border/50"
-                    : "bg-card/90 border border-border/70"
+                    ? "bg-white/20 dark:bg-white/5 ml-auto border border-white/20 dark:border-white/10"
+                    : "bg-white/60 dark:bg-black/60 border border-white/20 dark:border-white/10"
                 )}
               >
-                <div className="shrink-0 pt-0.5">
+                <div className="shrink-0 pt-1">
                   {m.role === "user" ? (
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary border border-border text-foreground shadow-sm">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-gray-200 to-white dark:from-gray-800 dark:to-gray-700 border border-border/50 text-foreground shadow-lg">
                       <User className="h-5 w-5" />
                     </div>
                   ) : (
@@ -472,7 +483,7 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
                     </button>
                   </div>
                 )}
-              </div>
+              </motion.div>
             ))
           )}
           {isLoading && messages[messages.length - 1]?.role === "user" && (

@@ -66,17 +66,12 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-inter, system-ui, sans-serif);
-  
-  /* Moving monochrome gradient animation */
-  background: linear-gradient(270deg, var(--bg-grad-1), var(--bg-grad-2), var(--bg-grad-3), var(--bg-grad-1));
-  background-size: 400% 400%;
-  animation: moveGradient 15s ease infinite;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-@keyframes moveGradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.02em;
 }
 
 /* Utility classes used throughout the app */
