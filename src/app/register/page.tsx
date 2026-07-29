@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, User, Loader2 } from "lucide-react";
 import { registerUser } from "@/app/actions/auth";
-import { AILogo } from "@/components/ui/ai-logo";
+import { AILogo3D } from "@/components/ui/3d-logo";
 
 export default function RegisterPage() {
   const [error, setError] = useState("");
@@ -35,7 +35,7 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
-          <AILogo size="lg" className="mb-4" />
+          <AILogo3D className="w-48 h-48 mb-4" />
           <h1 className="text-3xl font-bold text-foreground">Create account</h1>
           <p className="text-muted-foreground mt-1">Join Promptly-AI today</p>
         </div>
