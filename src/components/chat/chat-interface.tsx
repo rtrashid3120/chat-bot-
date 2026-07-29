@@ -9,6 +9,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { AILogo } from "@/components/ui/ai-logo";
 import { CodeBlock } from "@/components/chat/code-block";
+import { InputBar } from "@/components/ui/input-bar";
+import AnimatedGradientBackground from "@/components/ui/animated-gradient-background";
 
 const MODELS = [
   { key: "llama-3.3-70b-versatile", label: "Llama 3.3 70B", badge: "Free", icon: "⚡" },
@@ -229,9 +231,15 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
 
   return (
     <div className="flex h-full w-full flex-col bg-background overflow-hidden relative">
-      {/* Background ambient glowing shapes */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-10 right-10 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
+      {/* Animated Gradient Background from 21st.dev */}
+      <AnimatedGradientBackground
+        Breathing
+        gradientColors={["#ffffff", "#f8fafc", "#ede9fe", "#ddd6fe", "#c4b5fd", "#a78bfa", "#8b5cf6"]}
+        gradientStops={[30, 45, 58, 68, 78, 88, 100]}
+        animationSpeed={0.012}
+        breathingRange={6}
+        containerClassName="dark:opacity-20 opacity-40"
+      />
 
       {/* Top Action Bar */}
       <div className="relative z-20 flex flex-wrap md:flex-nowrap items-center justify-between gap-y-2 gap-x-1 pt-2 sm:pt-3 pb-1 px-2 sm:px-4 max-w-4xl xl:max-w-5xl mx-auto w-full">
@@ -479,11 +487,11 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
 
       <div className="p-3 sm:p-4 sm:px-6 lg:px-8 bg-background/90 backdrop-blur-xl border-t border-border/60">
         <div className="mx-auto max-w-4xl xl:max-w-5xl">
-          {/* Image Preview */}
+          {/* Image preview above InputBar */}
           {imageBase64 && (
-            <div className="mb-3 relative inline-block animate-fade-in">
-              <div className="relative h-20 w-20 rounded-xl overflow-hidden border-2 border-brand-500/30 shadow-md">
-                <img src={imageBase64} alt="Upload preview" className="h-full w-full object-cover" />
+            <div className="mb-2 flex items-start gap-2 px-3">
+              <div className="relative">
+                <img src={imageBase64} alt="Attached" className="max-h-32 rounded-xl border border-border object-cover" />
                 <button
                   type="button"
                   onClick={() => setImageBase64(null)}
@@ -494,25 +502,19 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
               </div>
             </div>
           )}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!input.trim() && !imageBase64 && !isLoading) return;
-              chatSubmit(e, { body: { id, model: selectedModel, persona: selectedPersona, imageBase64 } });
-              setImageBase64(null); // Clear after submit
-            }}
-            className="relative flex items-center shadow-lg rounded-2xl bg-card border border-border/80 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 transition-all"
-          >
-            <input
-              type="file"
-              accept="image/*"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              className="hidden"
-            />
-            
-            {walkieMode ? (
-              <div className="flex w-full items-center justify-center py-2 px-4">
+
+          {/* Hidden file input */}
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            className="hidden"
+          />
+
+          {walkieMode ? (
+            <div className="px-3 pb-3">
+              <div className="mx-auto max-w-3xl">
                 <button
                   type="button"
                   onMouseDown={() => {
@@ -533,7 +535,7 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
                     }
                   }}
                   onTouchStart={(e) => {
-                    e.preventDefault(); 
+                    e.preventDefault();
                     walkieSubmitRequestedRef.current = false;
                     if (!isListening) toggleListening();
                   }}
@@ -545,10 +547,10 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
                     }
                   }}
                   className={cn(
-                    "w-full max-w-sm mx-auto h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-primary-foreground transition-all select-none touch-none",
-                    isListening 
-                      ? "bg-rose-500 scale-95 shadow-inner" 
-                      : "bg-brand-500 shadow-md hover:bg-brand-600"
+                    "w-full h-14 rounded-[16px] flex items-center justify-center gap-2 font-bold text-white transition-all select-none touch-none shadow-sm ring-1",
+                    isListening
+                      ? "bg-rose-500 scale-95 shadow-inner ring-rose-400"
+                      : "bg-neutral-900 dark:bg-white dark:text-neutral-900 ring-neutral-800 dark:ring-neutral-200 hover:opacity-90"
                   )}
                 >
                   {isListening ? (
@@ -564,77 +566,55 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
                   )}
                 </button>
               </div>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent/80 transition-colors"
-                  title="Attach Image"
-                >
-                  <Paperclip className="h-4 w-4" />
-                </button>
-                <input
-                  value={input}
-                  onChange={handleInputChange}
-                  placeholder={isListening ? "Listening... Speak now" : "Message Promptly-AI..."}
-                  className="min-h-12 sm:min-h-14 w-full resize-none border-0 bg-transparent py-3 pl-12 pr-[120px] text-sm sm:text-base focus:outline-none placeholder:text-muted-foreground/70"
-                />
-              </>
-            )}
-
-            {!walkieMode && (
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+            </div>
+          ) : (
+            <InputBar
+              value={input}
+              onChange={(v) => handleInputChange({ target: { value: v } } as React.ChangeEvent<HTMLInputElement>)}
+              onSend={() => {
+                const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+                chatSubmit(fakeEvent as React.FormEvent<HTMLFormElement>, { body: { id, model: selectedModel, persona: selectedPersona, imageBase64 } });
+                setImageBase64(null);
+              }}
+              onStop={stop}
+              status={isLoading ? "streaming" : "ready"}
+              placeholder={isListening ? "Listening... Speak now" : "Message Promptly-AI..."}
+              autoFocus
+              onAttach={() => fileInputRef.current?.click()}
+              leftActions={
                 <button
                   type="button"
                   onClick={improvePrompt}
                   disabled={!input.trim() || isImproving}
                   title="Magic Prompt Improver"
                   className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-xl transition-all",
+                    "inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors",
                     isImproving
-                      ? "text-brand-500 animate-pulse bg-brand-500/10"
-                      : "text-muted-foreground hover:text-brand-500 hover:bg-brand-500/10 disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+                      ? "text-violet-500 animate-pulse bg-violet-100 dark:bg-violet-900/30"
+                      : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-40"
                   )}
                 >
                   <Wand2 className="h-4 w-4" />
                 </button>
+              }
+              rightActions={
                 <button
                   type="button"
                   onClick={toggleListening}
                   title={isListening ? "Stop listening" : "Speak to type"}
                   className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-xl transition-all",
+                    "inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors",
                     isListening
-                      ? "bg-destructive text-destructive-foreground animate-pulse shadow-lg ring-2 ring-destructive/50"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/80"
+                      ? "bg-red-500 text-white animate-pulse"
+                      : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                   )}
                 >
                   {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                 </button>
-
-              {isLoading ? (
-                <button
-                  type="button"
-                  onClick={() => stop()}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted text-muted-foreground hover:bg-accent transition-colors"
-                >
-                  <Square className="h-4 w-4 fill-current" />
-                </button>
-              ) : (
-                <button
-                  type="submit"
-                  disabled={!input.trim() && !imageBase64}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500 text-primary-foreground hover:bg-brand-600 transition-colors shadow-md shadow-brand-500/20 disabled:opacity-50 disabled:shadow-none"
-                >
-                  <Send className="h-4 w-4 ml-0.5" />
-                </button>
-              )}
-            </div>
-            )}
-            <button id="hidden-submit-btn" type="submit" className="hidden" />
-          </form>
-          <p className="mt-2 text-center text-[11px] sm:text-xs text-muted-foreground/80">
+              }
+            />
+          )}
+          <p className="mt-1 pb-2 text-center text-[11px] sm:text-xs text-muted-foreground/60">
             Promptly-AI can make mistakes. Verify important information. Created by Mohamed Rashid.
           </p>
         </div>
