@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, Loader2, UserPlus, CheckCircle2 } from "lucide-react";
 import { AILogo } from "@/components/ui/ai-logo";
+import { FloatingGlassParticles } from "@/components/ui/floating-glass-particles";
 
 import { motion } from "framer-motion";
 
@@ -110,7 +111,8 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative z-10">
+    <div className="min-h-screen flex items-center justify-center p-4 relative z-10 overflow-hidden">
+      <FloatingGlassParticles />
       <motion.div 
         initial={{ opacity: 0, y: 30, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
