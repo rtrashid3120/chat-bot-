@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 import { ThemeProvider } from "@/components/theme-provider";
 
 import { SpotlightBackground } from "@/components/ui/spotlight-background";
-
+import { AbstractGlassHero } from "@/components/ui/abstract-glass-hero";
 import { SmoothScroll } from "@/components/smooth-scroll";
 
 export default function RootLayout({
@@ -30,6 +30,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <SpotlightBackground>
+            <AbstractGlassHero />
             <SmoothScroll>
               {children}
             </SmoothScroll>
