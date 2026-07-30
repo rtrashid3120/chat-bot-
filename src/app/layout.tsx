@@ -30,9 +30,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <SpotlightBackground>
-            <SmoothScroll>
-              {children}
-            </SmoothScroll>
+            {children}
           </SpotlightBackground>
         </ThemeProvider>
       </body>

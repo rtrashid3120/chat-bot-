@@ -435,22 +435,25 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.4, delay: Math.min(i * 0.02, 0.2), ease: [0.16, 1, 0.3, 1] }}
                 className={cn(
-                  "flex w-full gap-3 sm:gap-4 rounded-3xl p-4 sm:p-5 transition-all shadow-xl backdrop-blur-2xl",
+                  "flex w-full gap-3 sm:gap-4 rounded-3xl p-4 sm:p-5 transition-all shadow-md",
                   m.role === "user"
-                    ? "bg-white/20 dark:bg-white/5 ml-auto border border-white/20 dark:border-white/10"
-                    : "bg-white/60 dark:bg-black/60 border border-white/20 dark:border-white/10"
+                    ? "bg-violet-600 text-white ml-auto max-w-[85%] rounded-tr-sm"
+                    : "bg-white dark:bg-zinc-900 border border-border/40 text-foreground rounded-tl-sm"
                 )}
               >
                 <div className="shrink-0 pt-1">
                   {m.role === "user" ? (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-gray-200 to-white dark:from-gray-800 dark:to-gray-700 border border-border/50 text-foreground shadow-lg">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/20 text-white shadow-inner">
                       <User className="h-5 w-5" />
                     </div>
                   ) : (
                     <AILogo size="sm" />
                   )}
                 </div>
-                <div className="flex-1 space-y-2 overflow-hidden px-1 prose prose-sm dark:prose-invert max-w-none text-sm sm:text-base leading-relaxed">
+                <div className={cn(
+                  "flex-1 space-y-2 overflow-hidden px-1 prose prose-sm max-w-none text-sm sm:text-base leading-relaxed",
+                  m.role === "user" ? "prose-invert text-white" : "dark:prose-invert text-foreground"
+                )}>
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
