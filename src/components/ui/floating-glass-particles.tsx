@@ -74,24 +74,23 @@ export function FloatingGlassParticles() {
   // Pre-generate random positions, scales, and types for the glass pieces
   const particles = useMemo(() => {
     const items = [];
-    const types = ["torus", "icosahedron", "octahedron", "sphere"];
     
-    // Create 15 scattered glass pieces
-    for (let i = 0; i < 15; i++) {
+    // Create 45 scattered glass pieces to fill the screen
+    for (let i = 0; i < 45; i++) {
       items.push({
         id: i,
         position: [
-          (Math.random() - 0.5) * 20, // Spread widely across X axis
-          (Math.random() - 0.5) * 15, // Spread across Y axis
-          (Math.random() - 0.5) * 10 - 5, // Z axis (push slightly back so they don't block the UI)
+          (Math.random() - 0.5) * 35, // Spread much wider across X axis
+          (Math.random() - 0.5) * 25, // Spread much wider across Y axis
+          (Math.random() - 0.5) * 15 - 5, // Z axis 
         ] as [number, number, number],
         rotation: [
           Math.random() * Math.PI,
           Math.random() * Math.PI,
           Math.random() * Math.PI,
         ] as [number, number, number],
-        scale: Math.random() * 0.5 + 0.3, // Scale between 0.3 and 0.8 (small pieces)
-        type: types[Math.floor(Math.random() * types.length)],
+        scale: Math.random() * 0.4 + 0.2, // Slightly smaller sizes (0.2 to 0.6) so it doesn't feel cluttered
+        type: "torus", // Exclusively donut shape
       });
     }
     return items;
