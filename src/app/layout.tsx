@@ -13,6 +13,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 
 import { SpotlightBackground } from "@/components/ui/spotlight-background";
 
+import { SmoothScroll } from "@/components/smooth-scroll";
+
 export default function RootLayout({
   children,
 }: {
@@ -28,7 +30,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <SpotlightBackground>
-            {children}
+            <SmoothScroll>
+              {children}
+            </SmoothScroll>
           </SpotlightBackground>
         </ThemeProvider>
       </body>
