@@ -30,7 +30,6 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <SpotlightBackground>
-            <AbstractGlassHero />
             <SmoothScroll>
               {children}
             </SmoothScroll>

@@ -269,9 +269,9 @@ export async function POST(req: Request) {
               userId,
               conversationId: id,
               model: modelKey,
-              inputTokens: usage.promptTokens || 0,
-              outputTokens: usage.completionTokens || 0,
-              totalTokens: usage.totalTokens || 0,
+              inputTokens: usage?.promptTokens || 0,
+              outputTokens: usage?.completionTokens || 0,
+              totalTokens: usage?.totalTokens || 0,
               cost: 0,
             },
           });

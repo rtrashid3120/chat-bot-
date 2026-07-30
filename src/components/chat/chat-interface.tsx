@@ -58,7 +58,7 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
   const lastSpokenId = useRef<string | null>(null);
   const walkieSubmitRequestedRef = useRef(false);
 
-  const { messages, input, setInput, handleInputChange, handleSubmit: chatSubmit, status, stop } = useChat({
+  const { messages, input, setInput, handleInputChange, append, status, stop } = useChat({
     id,
     initialMessages: initialMessages as import("@ai-sdk/react").Message[],
     body: { id },
@@ -146,7 +146,20 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
       setIsListening(false);
       if (walkieSubmitRequestedRef.current) {
         walkieSubmitRequestedRef.current = false;
-        setTimeout(() => document.getElementById("hidden-submit-btn")?.click(), 100);
+        setTimeout(() => {
+          // Use the latest input from the DOM or state
+          const textarea = document.querySelector('textarea');
+          const currentText = textarea?.value?.trim();
+          if (currentText) {
+            append(
+              { role: "user", content: currentText }, 
+              { body: { id, model: selectedModel, persona: selectedPersona, imageBase64 } }
+            );
+            setImageBase64(null);
+            if (typeof setInput === 'function') setInput("");
+            else handleInputChange({ target: { value: "" } } as any);
+          }
+        }, 300);
       }
     };
     recognition.onerror = () => setIsListening(false);
@@ -582,9 +595,8 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
             <InputBar
               value={input}
               onChange={(v) => handleInputChange({ target: { value: v } } as React.ChangeEvent<HTMLInputElement>)}
-              onSend={() => {
-                const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
-                chatSubmit(fakeEvent as React.FormEvent<HTMLFormElement>, { body: { id, model: selectedModel, persona: selectedPersona, imageBase64 } });
+              onSend={(msg) => {
+                append({ role: "user", content: msg.content }, { body: { id, model: selectedModel, persona: selectedPersona, imageBase64 } });
                 setImageBase64(null);
               }}
               onStop={stop}
