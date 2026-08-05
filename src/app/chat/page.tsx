@@ -1,5 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic";
 import { getConversations, createConversation } from "@/app/actions/conversations";
 import { Sidebar } from "@/components/chat/sidebar";
 import { AILogo } from "@/components/ui/ai-logo";

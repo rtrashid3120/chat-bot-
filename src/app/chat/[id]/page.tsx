@@ -1,5 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
+
+export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { getConversations } from "@/app/actions/conversations";
 import { Sidebar } from "@/components/chat/sidebar";
