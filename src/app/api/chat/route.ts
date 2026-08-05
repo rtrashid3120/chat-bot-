@@ -61,8 +61,8 @@ export async function POST(req: Request) {
     }
 
     let isMistral = selectedModel === "open-mistral-7b";
-    let isGemini = selectedModel === "gemini-1.5-pro";
     let modelKey = selectedModel || DEFAULT_MODEL;
+    let isGemini = modelKey === "gemini-1.5-pro";
     
     // Automatically switch to Vision model if an image is uploaded and model doesn't support it natively
     if (imageBase64 && !isGemini) {
