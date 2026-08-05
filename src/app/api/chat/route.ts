@@ -258,7 +258,12 @@ export async function POST(req: Request) {
           },
         });
 
-        return result.toDataStreamResponse();
+        return result.toDataStreamResponse({
+          getErrorMessage(error: unknown) {
+            const msg = (error as Error)?.message || String(error);
+            return `⚠️ **Gemini API Error**: ${msg}`;
+          },
+        });
       } catch (err: any) {
         console.error("Gemini stream error:", err);
         return sendErrorAsTextBubble(`⚠️ **Gemini API Error**: ${err?.message || "Google Gemini failed to stream."}`);
@@ -290,7 +295,12 @@ export async function POST(req: Request) {
         },
       });
 
-      return result.toDataStreamResponse();
+      return result.toDataStreamResponse({
+        getErrorMessage(error: unknown) {
+          const msg = (error as Error)?.message || String(error);
+          return `⚠️ **Groq Error**: ${msg}`;
+        },
+      });
     } catch (err: any) {
       return sendErrorAsTextBubble(`⚠️ **Groq Error**: ${err?.message || "Groq Llama failed to stream."}`);
     }
