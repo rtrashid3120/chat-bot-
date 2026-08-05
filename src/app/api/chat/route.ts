@@ -12,7 +12,6 @@ const PERSONA_PROMPTS: Record<string, string> = {
   "creative": "You are Promptly-AI, a creative and imaginative writer. Express ideas with flair, vivid language, and engaging tone. Your creator and owner is Mohamed Rashid. If asked, state that you were created by him."
 };
 
-// ── Direct Mistral streaming via fetch ──────────────────────────────────────
 async function streamMistral(rawMessages: { role: string; content: string; [key: string]: unknown }[]) {
   const apiKey = process.env.MISTRAL_API_KEY;
   if (!apiKey) throw new Error("MISTRAL_API_KEY not set in Vercel.");
@@ -158,6 +157,13 @@ export async function POST(req: Request) {
       ...formattedMessages
     ];
 
+    // Helper to format assistant error response as normal text so UI ALWAYS renders the bubble
+    const sendErrorAsTextBubble = (errorMsg: string) => {
+      return new Response(`0:${JSON.stringify(errorMsg)}\n`, {
+        headers: { "Content-Type": "text/plain; charset=utf-8", "X-Vercel-AI-Data-Stream": "v1" },
+      });
+    };
+
     // ── 1. MISTRAL PROVIDER ──────────────────────────────────────────────────
     if (isMistral) {
       try {
@@ -211,10 +217,7 @@ export async function POST(req: Request) {
           headers: { "Content-Type": "text/plain; charset=utf-8", "X-Vercel-AI-Data-Stream": "v1" },
         });
       } catch (err: any) {
-        const msg = `⚠️ **Mistral API Error**: ${err?.message || "Failed to reach Mistral."}`;
-        return new Response(`0:${JSON.stringify(msg)}\n`, {
-          headers: { "Content-Type": "text/plain; charset=utf-8", "X-Vercel-AI-Data-Stream": "v1" },
-        });
+        return sendErrorAsTextBubble(`⚠️ **Mistral API Error**: ${err?.message || "Failed to reach Mistral."}`);
       }
     }
 
@@ -226,10 +229,7 @@ export async function POST(req: Request) {
         process.env.GOOGLE_API_KEY;
 
       if (!googleApiKey || googleApiKey.trim() === "") {
-        const errorMessage = "⚠️ **Gemini API Key Missing**: Please add `GOOGLE_GENERATIVE_AI_API_KEY` to your Vercel Environment Variables and redeploy.";
-        return new Response(`0:${JSON.stringify(errorMessage)}\n`, {
-          headers: { "Content-Type": "text/plain; charset=utf-8", "X-Vercel-AI-Data-Stream": "v1" },
-        });
+        return sendErrorAsTextBubble("⚠️ **Gemini API Key Missing**: Please add `GOOGLE_GENERATIVE_AI_API_KEY` to your Vercel Environment Variables and redeploy.");
       }
 
       const google = createGoogleGenerativeAI({ apiKey: googleApiKey });
@@ -258,17 +258,10 @@ export async function POST(req: Request) {
           },
         });
 
-        return result.toDataStreamResponse({
-          getErrorMessage(error: unknown) {
-            return `Gemini API Error: ${(error as Error)?.message || String(error)}`;
-          },
-        });
+        return result.toDataStreamResponse();
       } catch (err: any) {
         console.error("Gemini stream error:", err);
-        const msg = `⚠️ **Gemini API Error**: ${err?.message || "Google Gemini failed to stream."}`;
-        return new Response(`0:${JSON.stringify(msg)}\n`, {
-          headers: { "Content-Type": "text/plain; charset=utf-8", "X-Vercel-AI-Data-Stream": "v1" },
-        });
+        return sendErrorAsTextBubble(`⚠️ **Gemini API Error**: ${err?.message || "Google Gemini failed to stream."}`);
       }
     }
 
@@ -297,22 +290,14 @@ export async function POST(req: Request) {
         },
       });
 
-      return result.toDataStreamResponse({
-        getErrorMessage(error: unknown) {
-          return `Groq Error: ${(error as Error)?.message || String(error)}`;
-        },
-      });
+      return result.toDataStreamResponse();
     } catch (err: any) {
-      const msg = `⚠️ **Groq Error**: ${err?.message || "Groq Llama failed to stream."}`;
-      return new Response(`0:${JSON.stringify(msg)}\n`, {
-        headers: { "Content-Type": "text/plain; charset=utf-8", "X-Vercel-AI-Data-Stream": "v1" },
-      });
+      return sendErrorAsTextBubble(`⚠️ **Groq Error**: ${err?.message || "Groq Llama failed to stream."}`);
     }
 
   } catch (error: any) {
     console.error("Chat API Critical Error:", error);
-    const fatalMessage = `⚠️ **Error**: ${error?.message || "An unexpected error occurred."}`;
-    return new Response(`0:${JSON.stringify(fatalMessage)}\n`, {
+    return new Response(`0:${JSON.stringify(`⚠️ **Error**: ${error?.message || "An unexpected error occurred."}`)}\n`, {
       headers: { "Content-Type": "text/plain; charset=utf-8", "X-Vercel-AI-Data-Stream": "v1" },
     });
   }
