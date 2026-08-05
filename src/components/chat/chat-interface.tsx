@@ -14,9 +14,9 @@ import AnimatedGradientBackground from "@/components/ui/animated-gradient-backgr
 import { motion } from "framer-motion";
 
 const MODELS = [
-  { key: "gemini-1.5-pro", label: "Gemini 1.5 Pro", badge: "Web + Vision", icon: "✨" },
-  { key: "llama-3.3-70b-versatile", label: "Llama 3.3 70B", badge: "Free", icon: "⚡" },
-  { key: "open-mistral-7b",          label: "Mistral 7B",     badge: "Free", icon: "🌟" },
+  { key: "gemini-1.5-pro",       label: "Gemini 1.5 Pro",   badge: "Web + Vision", icon: "✨" },
+  { key: "gemini-1.5-flash",     label: "Gemini 1.5 Flash", badge: "Fast Web",     icon: "⚡" },
+  { key: "gemini-2.0-flash-exp", label: "Gemini 2.0 Flash", badge: "Next-Gen",     icon: "🚀" },
 ];
 
 type DBMessage = {
