@@ -1,5 +1,5 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { streamText, generateText } from "ai";
+import { streamText } from "ai";
 import { groq } from "@/lib/groq";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -7,16 +7,41 @@ import { prisma } from "@/lib/prisma";
 export const maxDuration = 60;
 
 const PERSONA_PROMPTS: Record<string, string> = {
-  "default": "You are Promptly-AI, a helpful, friendly, and concise AI assistant powered by Google Gemini. Your creator and owner is Mohamed Rashid. If anyone asks who made you, who owns you, or who your creator is, you must proudly say that you were created by Mohamed Rashid.",
-  "coding": "You are Promptly-AI, an expert programmer powered by Google Gemini. Provide clean, robust, well-documented code. Explain your reasoning clearly. Your creator and owner is Mohamed Rashid. If asked, state that you were created by him.",
-  "creative": "You are Promptly-AI, a creative and imaginative writer powered by Google Gemini. Express ideas with flair, vivid language, and engaging tone. Your creator and owner is Mohamed Rashid. If asked, state that you were created by him."
+  "default": "You are Promptly-AI, a helpful, friendly, and concise AI assistant. Your creator and owner is Mohamed Rashid. If anyone asks who made you, who owns you, or who your creator is, you must proudly say that you were created by Mohamed Rashid.",
+  "coding": "You are Promptly-AI, an expert programmer. Provide clean, robust, well-documented code. Explain your reasoning clearly. Your creator and owner is Mohamed Rashid. If asked, state that you were created by him.",
+  "creative": "You are Promptly-AI, a creative and imaginative writer. Express ideas with flair, vivid language, and engaging tone. Your creator and owner is Mohamed Rashid. If asked, state that you were created by him."
 };
 
-const GEMINI_MODELS = [
-  "gemini-1.5-flash",
-  "gemini-1.5-pro",
-  "gemini-2.0-flash-exp"
-];
+// ── Direct Mistral streaming via fetch ──────────────────────────────────────
+async function streamMistral(rawMessages: { role: string; content: string; [key: string]: unknown }[]) {
+  const apiKey = process.env.MISTRAL_API_KEY;
+  if (!apiKey) throw new Error("MISTRAL_API_KEY not set");
+
+  const messages = rawMessages
+    .filter((m) => m.role === "user" || m.role === "assistant" || m.role === "system")
+    .map((m) => ({ role: m.role, content: String(m.content) }));
+
+  const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "open-mistral-7b",
+      messages,
+      stream: true,
+      max_tokens: 2048,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Mistral API error: ${res.status} ${err}`);
+  }
+
+  return res;
+}
 
 export async function POST(req: Request) {
   try {
@@ -34,26 +59,9 @@ export async function POST(req: Request) {
 
     const lastMessage = messages[messages.length - 1];
     const userId = session.user.id as string;
-
-    // Detect Google Gemini API key from multiple possible environment variables
-    const googleApiKey = 
-      process.env.GOOGLE_GENERATIVE_AI_API_KEY || 
-      process.env.GEMINI_API_KEY || 
-      process.env.GOOGLE_API_KEY;
-
-    if (!googleApiKey || googleApiKey.trim() === "") {
-      const errorMessage = "⚠️ **Gemini API Key Missing**: Please add `GOOGLE_GENERATIVE_AI_API_KEY` to your Vercel Environment Variables and redeploy.";
-      return new Response(`0:${JSON.stringify(errorMessage)}\n`, {
-        headers: {
-          "Content-Type": "text/plain; charset=utf-8",
-          "X-Vercel-AI-Data-Stream": "v1",
-        },
-      });
-    }
-
-    const google = createGoogleGenerativeAI({
-      apiKey: googleApiKey,
-    });
+    const modelKey = selectedModel || "gemini-1.5-flash";
+    const isMistral = modelKey === "open-mistral-7b";
+    const isGemini = modelKey.startsWith("gemini");
 
     // Save user message to DB
     if (id) {
@@ -76,7 +84,7 @@ export async function POST(req: Request) {
           conversationId: id,
           role: "user",
           content: typeof lastMessage.content === "string" ? lastMessage.content : "[Image Uploaded]",
-          model: selectedModel || "gemini-1.5-flash",
+          model: modelKey,
         },
       });
 
@@ -93,7 +101,6 @@ export async function POST(req: Request) {
     // ── Fast Real-time Live Web Search Pre-flight ─────────────────────────────
     let searchContext = "";
     try {
-      // Determine if query needs real-time live data (gold price, news, weather, stock, etc.)
       const userText = typeof lastMessage.content === "string" ? lastMessage.content : "";
       if (userText.trim()) {
         const { load } = await import("cheerio");
@@ -151,73 +158,141 @@ export async function POST(req: Request) {
       ...formattedMessages
     ];
 
-    // Priority model sequence: Use selected model if provided, followed by Gemini fallbacks
-    const requestedModel = (selectedModel && selectedModel.startsWith("gemini")) ? selectedModel : "gemini-1.5-flash";
-    const modelCandidates = Array.from(new Set([requestedModel, ...GEMINI_MODELS]));
+    // ── 1. MISTRAL PROVIDER ──────────────────────────────────────────────────
+    if (isMistral) {
+      const mistralRes = await streamMistral(messagesForModel);
+      const encoder = new TextEncoder();
+      const decoder = new TextDecoder();
+      let fullText = "";
 
-    let lastError: Error | null = null;
+      const stream = new ReadableStream({
+        async start(controller) {
+          const reader = mistralRes.body!.getReader();
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
 
-    // Loop through Gemini models to stream response
-    for (const modelName of modelCandidates) {
-      try {
-        console.log(`Streaming Gemini model: ${modelName}`);
-        
-        const result = streamText({
-          model: google(modelName),
-          messages: messagesForModel,
-          onFinish: async ({ text, usage }) => {
-            if (id && text) {
-              await prisma.message.create({
-                data: {
-                  conversationId: id,
-                  role: "assistant",
-                  content: text,
-                  model: modelName,
-                  tokens: usage?.totalTokens || 0,
-                },
-              });
+              const chunk = decoder.decode(value, { stream: true });
+              const lines = chunk.split("\n").filter((l) => l.startsWith("data: "));
 
-              await prisma.conversation.update({
-                where: { id },
-                data: { messageCount: { increment: 1 } },
-              });
-
-              await prisma.usageRecord.create({
-                data: {
-                  userId,
-                  conversationId: id,
-                  model: modelName,
-                  inputTokens: usage?.promptTokens || 0,
-                  outputTokens: usage?.completionTokens || 0,
-                  totalTokens: usage?.totalTokens || 0,
-                  cost: 0,
-                },
-              });
+              for (const line of lines) {
+                const data = line.slice(6).trim();
+                if (data === "[DONE]") continue;
+                try {
+                  const parsed = JSON.parse(data);
+                  const content = parsed.choices?.[0]?.delta?.content ?? "";
+                  if (content) {
+                    fullText += content;
+                    controller.enqueue(encoder.encode(`0:${JSON.stringify(content)}\n`));
+                  }
+                } catch {}
+              }
             }
-          },
-        });
+          } finally {
+            reader.releaseLock();
+          }
 
-        return result.toDataStreamResponse();
-      } catch (err: any) {
-        console.warn(`Gemini model ${modelName} error:`, err?.message || err);
-        lastError = err;
-      }
+          if (id && fullText) {
+            await prisma.message.create({
+              data: {
+                conversationId: id,
+                role: "assistant",
+                content: fullText,
+                model: modelKey,
+              },
+            });
+            await prisma.conversation.update({
+              where: { id },
+              data: { messageCount: { increment: 1 } },
+            });
+          }
+          controller.close();
+        },
+      });
+
+      return new Response(stream, {
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "X-Vercel-AI-Data-Stream": "v1",
+        },
+      });
     }
 
-    // Fallback message if Gemini API key fails
-    const errorDetails = lastError?.message || "Gemini API rejected the request.";
-    const fallbackMessage = `⚠️ **Gemini API Error**: Could not connect to Google Gemini.\n\n*Error details:* \`${errorDetails}\`\n\n*How to fix:* Please check that your \`GOOGLE_GENERATIVE_AI_API_KEY\` in Vercel is a valid API key from [Google AI Studio](https://aistudio.google.com).`;
+    // ── 2. GEMINI PROVIDER ───────────────────────────────────────────────────
+    if (isGemini) {
+      const googleApiKey = 
+        process.env.GOOGLE_GENERATIVE_AI_API_KEY || 
+        process.env.GEMINI_API_KEY || 
+        process.env.GOOGLE_API_KEY;
 
-    return new Response(`0:${JSON.stringify(fallbackMessage)}\n`, {
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "X-Vercel-AI-Data-Stream": "v1",
+      if (!googleApiKey || googleApiKey.trim() === "") {
+        const errorMessage = "⚠️ **Gemini API Key Missing**: Please add `GOOGLE_GENERATIVE_AI_API_KEY` to your Vercel Environment Variables and redeploy.";
+        return new Response(`0:${JSON.stringify(errorMessage)}\n`, {
+          headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+            "X-Vercel-AI-Data-Stream": "v1",
+          },
+        });
+      }
+
+      const google = createGoogleGenerativeAI({ apiKey: googleApiKey });
+      const geminiModelToUse = modelKey === "gemini-1.5-pro" ? "gemini-1.5-pro" : "gemini-1.5-flash";
+
+      const result = streamText({
+        model: google(geminiModelToUse),
+        messages: messagesForModel,
+        onFinish: async ({ text, usage }) => {
+          if (id && text) {
+            await prisma.message.create({
+              data: {
+                conversationId: id,
+                role: "assistant",
+                content: text,
+                model: geminiModelToUse,
+                tokens: usage?.totalTokens || 0,
+              },
+            });
+            await prisma.conversation.update({
+              where: { id },
+              data: { messageCount: { increment: 1 } },
+            });
+          }
+        },
+      });
+
+      return result.toDataStreamResponse();
+    }
+
+    // ── 3. GROQ (LLAMA) PROVIDER ─────────────────────────────────────────────
+    const groqModelToUse = imageBase64 ? "llama-3.2-90b-vision-preview" : "llama-3.3-70b-versatile";
+    const result = streamText({
+      model: groq(groqModelToUse),
+      messages: messagesForModel,
+      onFinish: async ({ text, usage }) => {
+        if (id && text) {
+          await prisma.message.create({
+            data: {
+              conversationId: id,
+              role: "assistant",
+              content: text,
+              model: groqModelToUse,
+              tokens: usage?.totalTokens || 0,
+            },
+          });
+          await prisma.conversation.update({
+            where: { id },
+            data: { messageCount: { increment: 1 } },
+          });
+        }
       },
     });
 
+    return result.toDataStreamResponse();
+
   } catch (error: any) {
-    console.error("Chat API Critical Error:", error);
-    const fatalMessage = `⚠️ **System Error**: ${error?.message || "An unexpected error occurred."}`;
+    console.error("Chat API Error:", error);
+    const fatalMessage = `⚠️ **Error**: ${error?.message || "An unexpected error occurred."}`;
     return new Response(`0:${JSON.stringify(fatalMessage)}\n`, {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
