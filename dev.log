@@ -46,3 +46,78 @@
 
  ✓ Starting...
  ✓ Ready in 1091ms
+ ✓ Compiled /middleware in 249ms (160 modules)
+ ○ Compiling /api/chat ...
+ ✓ Compiled /api/chat in 1966ms (777 modules)
+[33m[auth][warn][debug-enabled][0m Read more: https://warnings.authjs.dev
+ POST /api/chat 401 in 2215ms
+ ✓ Compiled in 132ms (583 modules)
+ ○ Compiling /login ...
+ ✓ Compiled /login in 5s (2666 modules)
+ GET /login 200 in 4476ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 1717ms (2648 modules)
+ GET /grid.svg 404 in 1835ms
+ GET /apple-touch-icon-precomposed.png 404 in 25ms
+ GET /apple-touch-icon.png 404 in 35ms
+ ✓ Compiled /favicon.ico in 199ms (1446 modules)
+ GET /favicon.ico 200 in 279ms
+ ✓ Compiled in 489ms (1229 modules)
+ ✓ Compiled in 346ms (1229 modules)
+ ✓ Compiled in 156ms (1229 modules)
+ ✓ Compiled in 550ms (1229 modules)
+ ✓ Compiled in 160ms (1229 modules)
+ ✓ Compiled in 298ms (1229 modules)
+ ✓ Compiled in 130ms (1229 modules)
+ ✓ Compiled in 159ms (1229 modules)
+ ✓ Compiled in 106ms (1229 modules)
+ ✓ Compiled in 373ms (1229 modules)
+ ✓ Compiled in 128ms (1229 modules)
+ ✓ Compiled in 208ms (1229 modules)
+ ✓ Compiled in 202ms (1229 modules)
+ ✓ Compiled in 237ms (1229 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 538ms (1610 modules)
+ GET / 307 in 720ms
+ ✓ Compiled /login in 353ms (1436 modules)
+ GET /login 200 in 696ms
+ ✓ Compiled /_not-found in 216ms (2653 modules)
+ GET /grid.svg 404 in 286ms
+ ✓ Compiled /favicon.ico in 135ms (1454 modules)
+ GET /favicon.ico 200 in 189ms
+ GET /login 200 in 203ms
+ GET /grid.svg 404 in 20ms
+ GET /favicon.ico 200 in 3ms
+ GET /login 200 in 58ms
+ GET /grid.svg 404 in 18ms
+ GET /favicon.ico 200 in 3ms
+ GET / 307 in 66ms
+ GET /login 200 in 27ms
+ GET /grid.svg 404 in 22ms
+ GET /login 200 in 56ms
+ GET /grid.svg 404 in 20ms
+ GET /favicon.ico 200 in 4ms
+ GET /login 200 in 70ms
+ GET /grid.svg 404 in 17ms
+ GET /favicon.ico 200 in 3ms
+ GET /login 200 in 21ms
+ GET /grid.svg 404 in 14ms
+ GET /favicon.ico 200 in 4ms
+ GET /login 200 in 49ms
+ GET /grid.svg 404 in 18ms
+ GET /favicon.ico 200 in 3ms
+ GET /login 200 in 48ms
+ GET /grid.svg 404 in 16ms
+ GET /favicon.ico 200 in 4ms
+ GET /login 200 in 52ms
+ GET /grid.svg 404 in 16ms
+ GET /favicon.ico 200 in 5ms
+ GET /login 200 in 49ms
+ GET /grid.svg 404 in 19ms
+ GET /favicon.ico 200 in 3ms
+ GET /login 200 in 51ms
+ GET /grid.svg 404 in 18ms
+ GET /favicon.ico 200 in 3ms
+ GET / 307 in 46ms
+ GET /login 200 in 27ms
+ GET /grid.svg 404 in 19ms

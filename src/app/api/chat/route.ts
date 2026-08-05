@@ -1,11 +1,12 @@
 import { groq } from "@/lib/groq";
+import { google } from "@ai-sdk/google";
 import { streamText, generateText } from "ai";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export const maxDuration = 60;
 
-const DEFAULT_MODEL = "llama-3.3-70b-versatile";
+const DEFAULT_MODEL = "gemini-1.5-pro";
 
 const PERSONA_PROMPTS: Record<string, string> = {
   "default": "You are Promptly-AI, a helpful, friendly, and concise AI assistant. Your creator and owner is Mohamed Rashid. If anyone asks who made you, who owns you, or who your creator is, you must proudly say that you were created by Mohamed Rashid.",
@@ -60,12 +61,13 @@ export async function POST(req: Request) {
     }
 
     let isMistral = selectedModel === "open-mistral-7b";
-    let modelKey = isMistral ? "open-mistral-7b" : DEFAULT_MODEL;
+    let isGemini = selectedModel === "gemini-1.5-pro";
+    let modelKey = selectedModel || DEFAULT_MODEL;
     
-    // Automatically switch to Vision model if an image is uploaded
-    if (imageBase64) {
+    // Automatically switch to Vision model if an image is uploaded and model doesn't support it natively
+    if (imageBase64 && !isGemini) {
       modelKey = "llama-3.2-90b-vision-preview";
-      isMistral = false; // Must use Groq for vision
+      isMistral = false;
     }
     const lastMessage = messages[messages.length - 1];
     const userId = session.user.id as string;
@@ -107,53 +109,55 @@ export async function POST(req: Request) {
 
     // ── Web Search Pre-flight (using fast Llama 8b) ──────────────────────────
     let searchContext = "";
-    try {
-      const searchDecision = await generateText({
-        model: groq("llama-3.1-8b-instant"),
-        messages: [
-          { 
-            role: "system", 
-            content: "You are a search intent classifier. If the user's latest message requires searching the web for real-time information, news, current events, or facts you might not know, output a 1-6 word search query. Otherwise, output EXACTLY the word 'NO_SEARCH'. Reply with nothing else." 
-          },
-          ...messages.slice(-3).map((m: { role: string; content: string }) => ({ role: m.role, content: m.content }))
-        ]
-      });
-      
-      const searchIntent = searchDecision.text.trim();
-      
-      if (searchIntent && searchIntent !== "NO_SEARCH" && !searchIntent.includes("NO_SEARCH")) {
-        console.log(`Web search intent detected: "${searchIntent}"`);
-        
-        const { load } = await import("cheerio");
-        // Use DDG Lite (POST request) which is much more reliable and less heavily blocked
-        const htmlRes = await fetch("https://lite.duckduckgo.com/lite/", {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/x-www-form-urlencoded",
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/112.0" 
-          },
-          body: "q=" + encodeURIComponent(searchIntent)
+    if (!isGemini) {
+      try {
+        const searchDecision = await generateText({
+          model: groq("llama-3.1-8b-instant"),
+          messages: [
+            { 
+              role: "system", 
+              content: "You are a search intent classifier. If the user's latest message requires searching the web for real-time information, news, current events, or facts you might not know, output a 1-6 word search query. Otherwise, output EXACTLY the word 'NO_SEARCH'. Reply with nothing else." 
+            },
+            ...messages.slice(-3).map((m: { role: string; content: string }) => ({ role: m.role, content: m.content }))
+          ]
         });
         
-        if (htmlRes.ok) {
-          const htmlText = await htmlRes.text();
-          const $ = load(htmlText);
-          const results: string[] = [];
+        const searchIntent = searchDecision.text.trim();
+        
+        if (searchIntent && searchIntent !== "NO_SEARCH" && !searchIntent.includes("NO_SEARCH")) {
+          console.log(`Web search intent detected: "${searchIntent}"`);
           
-          $('.result-snippet').each((i, el) => {
-            if (i < 4) {
-              results.push("- " + $(el).text().trim());
-            }
+          const { load } = await import("cheerio");
+          // Use DDG Lite (POST request) which is much more reliable and less heavily blocked
+          const htmlRes = await fetch("https://lite.duckduckgo.com/lite/", {
+            method: "POST",
+            headers: { 
+              "Content-Type": "application/x-www-form-urlencoded",
+              "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/112.0" 
+            },
+            body: "q=" + encodeURIComponent(searchIntent)
           });
           
-          if (results.length > 0) {
-            const topResults = results.join('\n');
-            searchContext = `\n\nLive Web Search Results for "${searchIntent}":\n${topResults}\nUse this live context to inform your answer.`;
+          if (htmlRes.ok) {
+            const htmlText = await htmlRes.text();
+            const $ = load(htmlText);
+            const results: string[] = [];
+            
+            $('.result-snippet').each((i, el) => {
+              if (i < 4) {
+                results.push("- " + $(el).text().trim());
+              }
+            });
+            
+            if (results.length > 0) {
+              const topResults = results.join('\n');
+              searchContext = `\n\nLive Web Search Results for "${searchIntent}":\n${topResults}\nUse this live context to inform your answer.`;
+            }
           }
         }
+      } catch (e) {
+        console.error("Web search pre-flight failed (gracefully bypassing):", e);
       }
-    } catch (e) {
-      console.error("Web search pre-flight failed (gracefully bypassing):", e);
     }
 
     // ── Inject Persona and Search Context ─────────────────────────────────────
@@ -243,9 +247,13 @@ export async function POST(req: Request) {
       });
     }
 
-    // ── Groq (Llama) via AI SDK streamText ──────────────────────────────────
+    // ── AI SDK streamText (Gemini or Groq Llama) ────────────────────────────
+    const aiModel = isGemini 
+      ? google("gemini-1.5-pro-latest", { useSearchGrounding: true })
+      : groq(modelKey);
+
     const result = streamText({
-      model: groq(DEFAULT_MODEL),
+      model: aiModel,
       messages: messagesForModel,
       onFinish: async ({ text, usage }) => {
         if (id) {
