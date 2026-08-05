@@ -37,7 +37,7 @@ const PERSONAS = [
 ];
 
 export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) {
-  const [selectedModel, setSelectedModel] = useState("gemini-1.5-pro");
+  const [selectedModel, setSelectedModel] = useState("gemini-1.5-flash");
   const [selectedPersona, setSelectedPersona] = useState("default");
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
   const [personaDropdownOpen, setPersonaDropdownOpen] = useState(false);

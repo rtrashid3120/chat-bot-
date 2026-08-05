@@ -1,5 +1,6 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { streamText } from "ai";
+import { streamText, generateText } from "ai";
+import { groq } from "@/lib/groq";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -11,12 +12,10 @@ const PERSONA_PROMPTS: Record<string, string> = {
   "creative": "You are Promptly-AI, a creative and imaginative writer powered by Google Gemini. Express ideas with flair, vivid language, and engaging tone. Your creator and owner is Mohamed Rashid. If asked, state that you were created by him."
 };
 
-// Pure Gemini Models list to try in order
 const GEMINI_MODELS = [
-  "gemini-1.5-pro",
   "gemini-1.5-flash",
-  "gemini-2.0-flash-exp",
-  "gemini-1.0-pro"
+  "gemini-1.5-pro",
+  "gemini-2.0-flash-exp"
 ];
 
 export async function POST(req: Request) {
@@ -77,7 +76,7 @@ export async function POST(req: Request) {
           conversationId: id,
           role: "user",
           content: typeof lastMessage.content === "string" ? lastMessage.content : "[Image Uploaded]",
-          model: selectedModel || "gemini-1.5-pro",
+          model: selectedModel || "gemini-1.5-flash",
         },
       });
 
@@ -91,8 +90,45 @@ export async function POST(req: Request) {
       });
     }
 
+    // ── Fast Real-time Live Web Search Pre-flight ─────────────────────────────
+    let searchContext = "";
+    try {
+      // Determine if query needs real-time live data (gold price, news, weather, stock, etc.)
+      const userText = typeof lastMessage.content === "string" ? lastMessage.content : "";
+      if (userText.trim()) {
+        const { load } = await import("cheerio");
+        const htmlRes = await fetch("https://html.duckduckgo.com/html/", {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/112.0" 
+          },
+          body: "q=" + encodeURIComponent(userText)
+        });
+        
+        if (htmlRes.ok) {
+          const htmlText = await htmlRes.text();
+          const $ = load(htmlText);
+          const results: string[] = [];
+          
+          $('.result__snippet').each((i, el) => {
+            if (i < 4) {
+              results.push("- " + $(el).text().trim());
+            }
+          });
+          
+          if (results.length > 0) {
+            searchContext = `\n\n[Live Internet Search Context]:\n${results.join('\n')}\nUse the live context above if relevant to answer the user accurately.`;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Live web search pre-flight skipped:", e);
+    }
+
     // Build system prompt
     const basePersona = PERSONA_PROMPTS[persona as string] || PERSONA_PROMPTS["default"];
+    const systemPrompt = basePersona + searchContext;
     
     // Process messages for Vision if image is present
     const formattedMessages = [...messages];
@@ -111,27 +147,26 @@ export async function POST(req: Request) {
     }
 
     const messagesForModel = [
-      { role: "system", content: basePersona },
+      { role: "system", content: systemPrompt },
       ...formattedMessages
     ];
 
-    // Priority model sequence: Use selected model if provided, followed by remaining Gemini fallbacks
-    const requestedModel = (selectedModel && selectedModel.startsWith("gemini")) ? selectedModel : "gemini-1.5-pro";
+    // Priority model sequence: Use selected model if provided, followed by Gemini fallbacks
+    const requestedModel = (selectedModel && selectedModel.startsWith("gemini")) ? selectedModel : "gemini-1.5-flash";
     const modelCandidates = Array.from(new Set([requestedModel, ...GEMINI_MODELS]));
 
     let lastError: Error | null = null;
 
-    // Loop through Gemini model candidates to ensure a successful response
+    // Loop through Gemini models to stream response
     for (const modelName of modelCandidates) {
       try {
-        console.log(`Attempting Gemini stream with model: ${modelName}`);
+        console.log(`Streaming Gemini model: ${modelName}`);
         
-        // Attempt stream with Search Grounding enabled
         const result = streamText({
-          model: google(modelName, { useSearchGrounding: true }),
+          model: google(modelName),
           messages: messagesForModel,
           onFinish: async ({ text, usage }) => {
-            if (id) {
+            if (id && text) {
               await prisma.message.create({
                 data: {
                   conversationId: id,
@@ -164,42 +199,14 @@ export async function POST(req: Request) {
 
         return result.toDataStreamResponse();
       } catch (err: any) {
-        console.warn(`Gemini model ${modelName} failed:`, err?.message || err);
-        lastError = err;
-        // Continue loop to next candidate
-      }
-    }
-
-    // If search grounding fails on all, try standard Gemini without search grounding
-    for (const modelName of modelCandidates) {
-      try {
-        console.log(`Attempting Gemini stream without grounding: ${modelName}`);
-        const result = streamText({
-          model: google(modelName),
-          messages: messagesForModel,
-          onFinish: async ({ text, usage }) => {
-            if (id && text) {
-              await prisma.message.create({
-                data: {
-                  conversationId: id,
-                  role: "assistant",
-                  content: text,
-                  model: modelName,
-                  tokens: usage?.totalTokens || 0,
-                },
-              });
-            }
-          },
-        });
-        return result.toDataStreamResponse();
-      } catch (err: any) {
+        console.warn(`Gemini model ${modelName} error:`, err?.message || err);
         lastError = err;
       }
     }
 
-    // If all Gemini attempts fail, return helpful diagnostic stream message
-    const errorDetails = lastError?.message || "Gemini API failed to respond.";
-    const fallbackMessage = `⚠️ **Gemini Connection Error**: Google Gemini could not complete the request.\n\n*Details:* \`${errorDetails}\`\n\n*Solution:* Please check your API key in Google AI Studio (https://aistudio.google.com) and ensure it has access to Gemini 1.5 Pro / Flash.`;
+    // Fallback message if Gemini API key fails
+    const errorDetails = lastError?.message || "Gemini API rejected the request.";
+    const fallbackMessage = `⚠️ **Gemini API Error**: Could not connect to Google Gemini.\n\n*Error details:* \`${errorDetails}\`\n\n*How to fix:* Please check that your \`GOOGLE_GENERATIVE_AI_API_KEY\` in Vercel is a valid API key from [Google AI Studio](https://aistudio.google.com).`;
 
     return new Response(`0:${JSON.stringify(fallbackMessage)}\n`, {
       headers: {
