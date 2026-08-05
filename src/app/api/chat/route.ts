@@ -14,7 +14,6 @@ const PERSONA_PROMPTS: Record<string, string> = {
   "creative": "You are Promptly-AI, a creative and imaginative writer. Express ideas with flair, vivid language, and engaging tone. Your creator and owner is Mohamed Rashid. If asked, state that you were created by him."
 };
 
-// Direct Mistral streaming via fetch
 async function streamMistral(rawMessages: { role: string; content: string; [key: string]: unknown }[]) {
   const apiKey = process.env.MISTRAL_API_KEY;
   if (!apiKey) throw new Error("MISTRAL_API_KEY not set");
@@ -100,39 +99,37 @@ export async function POST(req: Request) {
       });
     }
 
-    // ── High-Speed Real-time Internet Search Interceptor (150ms) ──────────────
+    // ── High-Speed Real-Time Google News RSS Search Interceptor ──────────────
     let searchContext = "";
     try {
       const userText = typeof lastMessage.content === "string" ? lastMessage.content : "";
       if (userText.trim() && userText.length > 2) {
         const { load } = await import("cheerio");
-        const htmlRes = await fetch("https://html.duckduckgo.com/html/", {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/x-www-form-urlencoded",
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/112.0" 
-          },
-          body: "q=" + encodeURIComponent(userText)
-        });
+        const rssRes = await fetch(
+          `https://news.google.com/rss/search?q=${encodeURIComponent(userText)}&hl=en-US&gl=US&ceid=US:en`,
+          { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" } }
+        );
         
-        if (htmlRes.ok) {
-          const htmlText = await htmlRes.text();
-          const $ = load(htmlText);
-          const results: string[] = [];
+        if (rssRes.ok) {
+          const xmlText = await rssRes.text();
+          const $ = load(xmlText, { xmlMode: true });
+          const items: string[] = [];
           
-          $('.result__snippet').each((i, el) => {
+          $("item").each((i, el) => {
             if (i < 5) {
-              results.push("- " + $(el).text().trim());
+              const title = $(el).find("title").text();
+              const pubDate = $(el).find("pubDate").text();
+              if (title) items.push(`- ${title} (${pubDate})`);
             }
           });
           
-          if (results.length > 0) {
-            searchContext = `\n\n[Live Internet Real-Time Search Results]:\n${results.join('\n')}\nUse the live web search context above if relevant to answer the user accurately with up-to-date facts (e.g. prices, weather, news, trending topics).`;
+          if (items.length > 0) {
+            searchContext = `\n\n[Real-Time Live Search Data]:\n${items.join("\n")}\nIMPORTANT: Use the live search data above to answer the user's question with current facts, prices, weather, or news. Do NOT say you don't have real-time data because the live data IS provided above.`;
           }
         }
       }
     } catch (e) {
-      console.warn("Live web search interceptor bypassed:", e);
+      console.warn("Live search interceptor skipped:", e);
     }
 
     // Build system prompt
@@ -219,11 +216,11 @@ export async function POST(req: Request) {
           headers: { "Content-Type": "text/plain; charset=utf-8", "X-Vercel-AI-Data-Stream": "v1" },
         });
       } catch (err: any) {
-        return sendErrorAsTextBubble(`⚠️ **Mistral Error**: ${err?.message || "Mistral failed to stream."}`);
+        return sendErrorAsTextBubble(`⚠️ **Mistral Error**: ${err?.message || "Failed to reach Mistral."}`);
       }
     }
 
-    // ── 2. GEMINI PROVIDER (Optional Alternate Option) ────────────────────────
+    // ── 2. GEMINI PROVIDER ───────────────────────────────────────────────────
     if (isGemini) {
       const googleApiKey = 
         process.env.GOOGLE_GENERATIVE_AI_API_KEY || 
@@ -231,7 +228,7 @@ export async function POST(req: Request) {
         process.env.GOOGLE_API_KEY;
 
       if (!googleApiKey || googleApiKey.trim() === "") {
-        return sendErrorAsTextBubble("⚠️ **Gemini Key Missing**: Add `GOOGLE_GENERATIVE_AI_API_KEY` to Vercel Environment Variables.");
+        return sendErrorAsTextBubble("⚠️ **Gemini API Key Missing**: Add `GOOGLE_GENERATIVE_AI_API_KEY` to Vercel Environment Variables.");
       }
 
       const google = createGoogleGenerativeAI({ apiKey: googleApiKey });
@@ -244,7 +241,13 @@ export async function POST(req: Request) {
           onFinish: async ({ text, usage }) => {
             if (id && text) {
               await prisma.message.create({
-                data: { conversationId: id, role: "assistant", content: text, model: geminiModelToUse, tokens: usage?.totalTokens || 0 },
+                data: {
+                  conversationId: id,
+                  role: "assistant",
+                  content: text,
+                  model: geminiModelToUse,
+                  tokens: usage?.totalTokens || 0,
+                },
               });
               await prisma.conversation.update({
                 where: { id },
