@@ -14,9 +14,9 @@ import AnimatedGradientBackground from "@/components/ui/animated-gradient-backgr
 import { motion } from "framer-motion";
 
 const MODELS = [
+  { key: "llama-3.3-70b-versatile", label: "Llama 3.3 70B",   badge: "Realtime Web",  icon: "⚡" },
   { key: "gemini-1.5-flash",        label: "Gemini 1.5 Flash", badge: "Web + Vision", icon: "✨" },
   { key: "gemini-1.5-pro",          label: "Gemini 1.5 Pro",   badge: "Pro Web",      icon: "🌟" },
-  { key: "llama-3.3-70b-versatile", label: "Llama 3.3 70B",   badge: "Free",         icon: "⚡" },
   { key: "open-mistral-7b",         label: "Mistral 7B",       badge: "Free",         icon: "🔥" },
 ];
 
@@ -38,7 +38,7 @@ const PERSONAS = [
 ];
 
 export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) {
-  const [selectedModel, setSelectedModel] = useState("gemini-1.5-flash");
+  const [selectedModel, setSelectedModel] = useState("llama-3.3-70b-versatile");
   const [selectedPersona, setSelectedPersona] = useState("default");
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
   const [personaDropdownOpen, setPersonaDropdownOpen] = useState(false);

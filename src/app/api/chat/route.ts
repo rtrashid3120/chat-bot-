@@ -1,20 +1,23 @@
+import { groq } from "@/lib/groq";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { streamText } from "ai";
-import { groq } from "@/lib/groq";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export const maxDuration = 60;
 
+const DEFAULT_MODEL = "llama-3.3-70b-versatile";
+
 const PERSONA_PROMPTS: Record<string, string> = {
-  "default": "You are Promptly-AI, a helpful, friendly, and concise AI assistant. Your creator and owner is Mohamed Rashid. If anyone asks who made you, who owns you, or who your creator is, you must proudly say that you were created by Mohamed Rashid.",
+  "default": "You are Promptly-AI, a helpful, friendly, and concise AI assistant with real-time internet search capabilities. Your creator and owner is Mohamed Rashid. If anyone asks who made you, who owns you, or who your creator is, you must proudly say that you were created by Mohamed Rashid.",
   "coding": "You are Promptly-AI, an expert programmer. Provide clean, robust, well-documented code. Explain your reasoning clearly. Your creator and owner is Mohamed Rashid. If asked, state that you were created by him.",
   "creative": "You are Promptly-AI, a creative and imaginative writer. Express ideas with flair, vivid language, and engaging tone. Your creator and owner is Mohamed Rashid. If asked, state that you were created by him."
 };
 
+// Direct Mistral streaming via fetch
 async function streamMistral(rawMessages: { role: string; content: string; [key: string]: unknown }[]) {
   const apiKey = process.env.MISTRAL_API_KEY;
-  if (!apiKey) throw new Error("MISTRAL_API_KEY not set in Vercel.");
+  if (!apiKey) throw new Error("MISTRAL_API_KEY not set");
 
   const messages = rawMessages
     .filter((m) => m.role === "user" || m.role === "assistant" || m.role === "system")
@@ -58,7 +61,7 @@ export async function POST(req: Request) {
 
     const lastMessage = messages[messages.length - 1];
     const userId = session.user.id as string;
-    const modelKey = selectedModel || "gemini-1.5-flash";
+    const modelKey = selectedModel || DEFAULT_MODEL;
     const isMistral = modelKey === "open-mistral-7b";
     const isGemini = modelKey.startsWith("gemini");
 
@@ -97,11 +100,11 @@ export async function POST(req: Request) {
       });
     }
 
-    // ── Fast Real-time Live Web Search Pre-flight ─────────────────────────────
+    // ── High-Speed Real-time Internet Search Interceptor (150ms) ──────────────
     let searchContext = "";
     try {
       const userText = typeof lastMessage.content === "string" ? lastMessage.content : "";
-      if (userText.trim() && userText.length > 3) {
+      if (userText.trim() && userText.length > 2) {
         const { load } = await import("cheerio");
         const htmlRes = await fetch("https://html.duckduckgo.com/html/", {
           method: "POST",
@@ -118,18 +121,18 @@ export async function POST(req: Request) {
           const results: string[] = [];
           
           $('.result__snippet').each((i, el) => {
-            if (i < 4) {
+            if (i < 5) {
               results.push("- " + $(el).text().trim());
             }
           });
           
           if (results.length > 0) {
-            searchContext = `\n\n[Live Internet Search Context]:\n${results.join('\n')}\nUse the live context above if relevant to answer the user accurately.`;
+            searchContext = `\n\n[Live Internet Real-Time Search Results]:\n${results.join('\n')}\nUse the live web search context above if relevant to answer the user accurately with up-to-date facts (e.g. prices, weather, news, trending topics).`;
           }
         }
       }
     } catch (e) {
-      console.warn("Live web search pre-flight skipped:", e);
+      console.warn("Live web search interceptor bypassed:", e);
     }
 
     // Build system prompt
@@ -157,7 +160,6 @@ export async function POST(req: Request) {
       ...formattedMessages
     ];
 
-    // Helper to format assistant error response as normal text so UI ALWAYS renders the bubble
     const sendErrorAsTextBubble = (errorMsg: string) => {
       return new Response(`0:${JSON.stringify(errorMsg)}\n`, {
         headers: { "Content-Type": "text/plain; charset=utf-8", "X-Vercel-AI-Data-Stream": "v1" },
@@ -217,11 +219,11 @@ export async function POST(req: Request) {
           headers: { "Content-Type": "text/plain; charset=utf-8", "X-Vercel-AI-Data-Stream": "v1" },
         });
       } catch (err: any) {
-        return sendErrorAsTextBubble(`⚠️ **Mistral API Error**: ${err?.message || "Failed to reach Mistral."}`);
+        return sendErrorAsTextBubble(`⚠️ **Mistral Error**: ${err?.message || "Mistral failed to stream."}`);
       }
     }
 
-    // ── 2. GEMINI PROVIDER ───────────────────────────────────────────────────
+    // ── 2. GEMINI PROVIDER (Optional Alternate Option) ────────────────────────
     if (isGemini) {
       const googleApiKey = 
         process.env.GOOGLE_GENERATIVE_AI_API_KEY || 
@@ -229,7 +231,7 @@ export async function POST(req: Request) {
         process.env.GOOGLE_API_KEY;
 
       if (!googleApiKey || googleApiKey.trim() === "") {
-        return sendErrorAsTextBubble("⚠️ **Gemini API Key Missing**: Please add `GOOGLE_GENERATIVE_AI_API_KEY` to your Vercel Environment Variables and redeploy.");
+        return sendErrorAsTextBubble("⚠️ **Gemini Key Missing**: Add `GOOGLE_GENERATIVE_AI_API_KEY` to Vercel Environment Variables.");
       }
 
       const google = createGoogleGenerativeAI({ apiKey: googleApiKey });
@@ -242,13 +244,7 @@ export async function POST(req: Request) {
           onFinish: async ({ text, usage }) => {
             if (id && text) {
               await prisma.message.create({
-                data: {
-                  conversationId: id,
-                  role: "assistant",
-                  content: text,
-                  model: geminiModelToUse,
-                  tokens: usage?.totalTokens || 0,
-                },
+                data: { conversationId: id, role: "assistant", content: text, model: geminiModelToUse, tokens: usage?.totalTokens || 0 },
               });
               await prisma.conversation.update({
                 where: { id },
@@ -260,19 +256,18 @@ export async function POST(req: Request) {
 
         return result.toDataStreamResponse({
           getErrorMessage(error: unknown) {
-            const msg = (error as Error)?.message || String(error);
-            return `⚠️ **Gemini API Error**: ${msg}`;
+            return `⚠️ **Gemini Error**: ${(error as Error)?.message || String(error)}`;
           },
         });
       } catch (err: any) {
-        console.error("Gemini stream error:", err);
-        return sendErrorAsTextBubble(`⚠️ **Gemini API Error**: ${err?.message || "Google Gemini failed to stream."}`);
+        return sendErrorAsTextBubble(`⚠️ **Gemini Error**: ${err?.message || "Gemini failed."}`);
       }
     }
 
-    // ── 3. GROQ (LLAMA) PROVIDER ─────────────────────────────────────────────
+    // ── 3. PRIMARY GROQ LLAMA 3.3 70B PROVIDER (Fast & Realtime Web Search) ─────
     try {
       const groqModelToUse = imageBase64 ? "llama-3.2-90b-vision-preview" : "llama-3.3-70b-versatile";
+      
       const result = streamText({
         model: groq(groqModelToUse),
         messages: messagesForModel,
@@ -287,9 +282,22 @@ export async function POST(req: Request) {
                 tokens: usage?.totalTokens || 0,
               },
             });
+
             await prisma.conversation.update({
               where: { id },
               data: { messageCount: { increment: 1 } },
+            });
+
+            await prisma.usageRecord.create({
+              data: {
+                userId,
+                conversationId: id,
+                model: groqModelToUse,
+                inputTokens: usage?.promptTokens || 0,
+                outputTokens: usage?.completionTokens || 0,
+                totalTokens: usage?.totalTokens || 0,
+                cost: 0,
+              },
             });
           }
         },
@@ -297,12 +305,12 @@ export async function POST(req: Request) {
 
       return result.toDataStreamResponse({
         getErrorMessage(error: unknown) {
-          const msg = (error as Error)?.message || String(error);
-          return `⚠️ **Groq Error**: ${msg}`;
+          return `⚠️ **Groq Error**: ${(error as Error)?.message || String(error)}`;
         },
       });
     } catch (err: any) {
-      return sendErrorAsTextBubble(`⚠️ **Groq Error**: ${err?.message || "Groq Llama failed to stream."}`);
+      console.error("Groq Llama Error:", err);
+      return sendErrorAsTextBubble(`⚠️ **Groq Error**: ${err?.message || "Groq Llama failed to respond."}`);
     }
 
   } catch (error: any) {
