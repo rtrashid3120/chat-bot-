@@ -249,7 +249,7 @@ export async function POST(req: Request) {
 
     // ── AI SDK streamText (Gemini or Groq Llama) ────────────────────────────
     const aiModel = isGemini 
-      ? google("gemini-1.5-pro-latest", { useSearchGrounding: true })
+      ? google("gemini-1.5-pro", { useSearchGrounding: true })
       : groq(modelKey);
 
     const result = streamText({
