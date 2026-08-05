@@ -15,7 +15,7 @@ const PERSONA_PROMPTS: Record<string, string> = {
 // ── Direct Mistral streaming via fetch ──────────────────────────────────────
 async function streamMistral(rawMessages: { role: string; content: string; [key: string]: unknown }[]) {
   const apiKey = process.env.MISTRAL_API_KEY;
-  if (!apiKey) throw new Error("MISTRAL_API_KEY not set");
+  if (!apiKey) throw new Error("MISTRAL_API_KEY not set in Vercel.");
 
   const messages = rawMessages
     .filter((m) => m.role === "user" || m.role === "assistant" || m.role === "system")
@@ -102,7 +102,7 @@ export async function POST(req: Request) {
     let searchContext = "";
     try {
       const userText = typeof lastMessage.content === "string" ? lastMessage.content : "";
-      if (userText.trim()) {
+      if (userText.trim() && userText.length > 3) {
         const { load } = await import("cheerio");
         const htmlRes = await fetch("https://html.duckduckgo.com/html/", {
           method: "POST",
@@ -160,63 +160,62 @@ export async function POST(req: Request) {
 
     // ── 1. MISTRAL PROVIDER ──────────────────────────────────────────────────
     if (isMistral) {
-      const mistralRes = await streamMistral(messagesForModel);
-      const encoder = new TextEncoder();
-      const decoder = new TextDecoder();
-      let fullText = "";
+      try {
+        const mistralRes = await streamMistral(messagesForModel);
+        const encoder = new TextEncoder();
+        const decoder = new TextDecoder();
+        let fullText = "";
 
-      const stream = new ReadableStream({
-        async start(controller) {
-          const reader = mistralRes.body!.getReader();
-          try {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
+        const stream = new ReadableStream({
+          async start(controller) {
+            const reader = mistralRes.body!.getReader();
+            try {
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
 
-              const chunk = decoder.decode(value, { stream: true });
-              const lines = chunk.split("\n").filter((l) => l.startsWith("data: "));
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split("\n").filter((l) => l.startsWith("data: "));
 
-              for (const line of lines) {
-                const data = line.slice(6).trim();
-                if (data === "[DONE]") continue;
-                try {
-                  const parsed = JSON.parse(data);
-                  const content = parsed.choices?.[0]?.delta?.content ?? "";
-                  if (content) {
-                    fullText += content;
-                    controller.enqueue(encoder.encode(`0:${JSON.stringify(content)}\n`));
-                  }
-                } catch {}
+                for (const line of lines) {
+                  const data = line.slice(6).trim();
+                  if (data === "[DONE]") continue;
+                  try {
+                    const parsed = JSON.parse(data);
+                    const content = parsed.choices?.[0]?.delta?.content ?? "";
+                    if (content) {
+                      fullText += content;
+                      controller.enqueue(encoder.encode(`0:${JSON.stringify(content)}\n`));
+                    }
+                  } catch {}
+                }
               }
+            } finally {
+              reader.releaseLock();
             }
-          } finally {
-            reader.releaseLock();
-          }
 
-          if (id && fullText) {
-            await prisma.message.create({
-              data: {
-                conversationId: id,
-                role: "assistant",
-                content: fullText,
-                model: modelKey,
-              },
-            });
-            await prisma.conversation.update({
-              where: { id },
-              data: { messageCount: { increment: 1 } },
-            });
-          }
-          controller.close();
-        },
-      });
+            if (id && fullText) {
+              await prisma.message.create({
+                data: { conversationId: id, role: "assistant", content: fullText, model: modelKey },
+              });
+              await prisma.conversation.update({
+                where: { id },
+                data: { messageCount: { increment: 1 } },
+              });
+            }
+            controller.close();
+          },
+        });
 
-      return new Response(stream, {
-        headers: {
-          "Content-Type": "text/plain; charset=utf-8",
-          "X-Vercel-AI-Data-Stream": "v1",
-        },
-      });
+        return new Response(stream, {
+          headers: { "Content-Type": "text/plain; charset=utf-8", "X-Vercel-AI-Data-Stream": "v1" },
+        });
+      } catch (err: any) {
+        const msg = `⚠️ **Mistral API Error**: ${err?.message || "Failed to reach Mistral."}`;
+        return new Response(`0:${JSON.stringify(msg)}\n`, {
+          headers: { "Content-Type": "text/plain; charset=utf-8", "X-Vercel-AI-Data-Stream": "v1" },
+        });
+      }
     }
 
     // ── 2. GEMINI PROVIDER ───────────────────────────────────────────────────
@@ -229,18 +228,55 @@ export async function POST(req: Request) {
       if (!googleApiKey || googleApiKey.trim() === "") {
         const errorMessage = "⚠️ **Gemini API Key Missing**: Please add `GOOGLE_GENERATIVE_AI_API_KEY` to your Vercel Environment Variables and redeploy.";
         return new Response(`0:${JSON.stringify(errorMessage)}\n`, {
-          headers: {
-            "Content-Type": "text/plain; charset=utf-8",
-            "X-Vercel-AI-Data-Stream": "v1",
-          },
+          headers: { "Content-Type": "text/plain; charset=utf-8", "X-Vercel-AI-Data-Stream": "v1" },
         });
       }
 
       const google = createGoogleGenerativeAI({ apiKey: googleApiKey });
       const geminiModelToUse = modelKey === "gemini-1.5-pro" ? "gemini-1.5-pro" : "gemini-1.5-flash";
 
+      try {
+        const result = streamText({
+          model: google(geminiModelToUse),
+          messages: messagesForModel,
+          onFinish: async ({ text, usage }) => {
+            if (id && text) {
+              await prisma.message.create({
+                data: {
+                  conversationId: id,
+                  role: "assistant",
+                  content: text,
+                  model: geminiModelToUse,
+                  tokens: usage?.totalTokens || 0,
+                },
+              });
+              await prisma.conversation.update({
+                where: { id },
+                data: { messageCount: { increment: 1 } },
+              });
+            }
+          },
+        });
+
+        return result.toDataStreamResponse({
+          getErrorMessage(error: unknown) {
+            return `Gemini API Error: ${(error as Error)?.message || String(error)}`;
+          },
+        });
+      } catch (err: any) {
+        console.error("Gemini stream error:", err);
+        const msg = `⚠️ **Gemini API Error**: ${err?.message || "Google Gemini failed to stream."}`;
+        return new Response(`0:${JSON.stringify(msg)}\n`, {
+          headers: { "Content-Type": "text/plain; charset=utf-8", "X-Vercel-AI-Data-Stream": "v1" },
+        });
+      }
+    }
+
+    // ── 3. GROQ (LLAMA) PROVIDER ─────────────────────────────────────────────
+    try {
+      const groqModelToUse = imageBase64 ? "llama-3.2-90b-vision-preview" : "llama-3.3-70b-versatile";
       const result = streamText({
-        model: google(geminiModelToUse),
+        model: groq(groqModelToUse),
         messages: messagesForModel,
         onFinish: async ({ text, usage }) => {
           if (id && text) {
@@ -249,7 +285,7 @@ export async function POST(req: Request) {
                 conversationId: id,
                 role: "assistant",
                 content: text,
-                model: geminiModelToUse,
+                model: groqModelToUse,
                 tokens: usage?.totalTokens || 0,
               },
             });
@@ -261,43 +297,23 @@ export async function POST(req: Request) {
         },
       });
 
-      return result.toDataStreamResponse();
+      return result.toDataStreamResponse({
+        getErrorMessage(error: unknown) {
+          return `Groq Error: ${(error as Error)?.message || String(error)}`;
+        },
+      });
+    } catch (err: any) {
+      const msg = `⚠️ **Groq Error**: ${err?.message || "Groq Llama failed to stream."}`;
+      return new Response(`0:${JSON.stringify(msg)}\n`, {
+        headers: { "Content-Type": "text/plain; charset=utf-8", "X-Vercel-AI-Data-Stream": "v1" },
+      });
     }
 
-    // ── 3. GROQ (LLAMA) PROVIDER ─────────────────────────────────────────────
-    const groqModelToUse = imageBase64 ? "llama-3.2-90b-vision-preview" : "llama-3.3-70b-versatile";
-    const result = streamText({
-      model: groq(groqModelToUse),
-      messages: messagesForModel,
-      onFinish: async ({ text, usage }) => {
-        if (id && text) {
-          await prisma.message.create({
-            data: {
-              conversationId: id,
-              role: "assistant",
-              content: text,
-              model: groqModelToUse,
-              tokens: usage?.totalTokens || 0,
-            },
-          });
-          await prisma.conversation.update({
-            where: { id },
-            data: { messageCount: { increment: 1 } },
-          });
-        }
-      },
-    });
-
-    return result.toDataStreamResponse();
-
   } catch (error: any) {
-    console.error("Chat API Error:", error);
+    console.error("Chat API Critical Error:", error);
     const fatalMessage = `⚠️ **Error**: ${error?.message || "An unexpected error occurred."}`;
     return new Response(`0:${JSON.stringify(fatalMessage)}\n`, {
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "X-Vercel-AI-Data-Stream": "v1",
-      },
+      headers: { "Content-Type": "text/plain; charset=utf-8", "X-Vercel-AI-Data-Stream": "v1" },
     });
   }
 }
